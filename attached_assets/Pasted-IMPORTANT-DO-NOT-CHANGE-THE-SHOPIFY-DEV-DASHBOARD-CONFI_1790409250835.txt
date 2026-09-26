@@ -1,0 +1,80 @@
+IMPORTANT — DO NOT CHANGE THE SHOPIFY DEV DASHBOARD CONFIGURATION.
+
+We have successfully configured and released the Shopify app as:
+
+- Custom Distribution
+- Single-store target: 10d118-f9.myshopify.com
+- Embedded: false
+- Scope: read_products
+- Legacy install flow: false
+- OAuth callback:
+  /api/shopify/auth/callback
+
+The official Shopify Custom Distribution install flow reached the
+Shopify permission screen successfully.
+
+However, when opening our configured Application URL:
+
+https://22a9ae4d-ce01-4ecf-8256-285c64105e6d-00-1e8puxyeezg0r.sisko.replit.dev/api
+
+the browser shows:
+
+Cannot GET /api
+
+TASK:
+
+1. Inspect the current Express routes.
+2. Do NOT change Shopify credentials.
+3. Do NOT change distribution.
+4. Do NOT enable embedded mode.
+5. Do NOT add write scopes.
+6. Do NOT run Meshy.
+7. Do NOT generate any 3D model.
+8. Do NOT modify Shopify products or product images.
+
+Determine whether /api is only being used as an API prefix and therefore
+does not currently have a GET /api route.
+
+If so, add a safe GET /api health/application landing route that returns
+a simple non-sensitive response such as:
+
+{
+  "ok": true,
+  "service": "INFini Homes View in Your Room"
+}
+
+Do NOT expose:
+- Shopify client secret
+- access tokens
+- environment variables
+- database credentials
+- Meshy API key
+
+Also verify that this existing OAuth callback remains unchanged:
+
+/api/shopify/auth/callback
+
+And verify that the standalone authorization-code flow remains intact.
+
+After the fix, test:
+
+GET /api
+GET /api/shopify/auth/callback (without OAuth parameters should return a
+controlled error, not crash the server)
+and confirm the server still starts cleanly.
+
+IMPORTANT:
+Do not change the Shopify Dev Dashboard configuration.
+Do not release another Shopify version unless you determine that the
+application_url itself must be changed.
+
+REPORT ONLY:
+1. Root cause
+2. Files changed
+3. Routes added/changed
+4. Tests performed
+5. Whether Shopify configuration needs any change
+6. Whether OAuth callback remains intact
+7. Any warnings
+
+STOP after the report.
