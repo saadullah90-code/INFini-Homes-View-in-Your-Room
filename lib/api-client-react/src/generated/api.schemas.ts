@@ -331,6 +331,23 @@ export interface StorefrontConnectionStatus {
   publishedModelCount: number;
 }
 
+export interface PublicCatalogSyncResult {
+  shop: string;
+  totalPublicProducts: number;
+  furnitureCount: number;
+  mattressCount: number;
+  otherCount: number;
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  completedAt: string;
+}
+
+export interface PublicCatalogStatus {
+  lastCompletedSync: PublicCatalogSyncResult | null;
+  syncing: boolean;
+}
+
 export type GetStorefrontModelParams = {
 shop: string;
 product_handle: string;

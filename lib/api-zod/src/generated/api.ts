@@ -505,3 +505,39 @@ export const GetStorefrontConnectionStatusResponse = zod.object({
 }).describe('Status of the no-OAuth storefront connect/model flow only. Kept entirely separate from the Shopify Admin API OAuth status reported by /status -- this must never claim OAuth is connected.\n')
 
 
+/**
+ * @summary Latest completed public Shopify catalog import (not a storefront frontend heartbeat)
+ */
+export const GetPublicCatalogStatusResponse = zod.object({
+  "lastCompletedSync": zod.union([zod.object({
+  "shop": zod.string(),
+  "totalPublicProducts": zod.number().int(),
+  "furnitureCount": zod.number().int(),
+  "mattressCount": zod.number().int(),
+  "otherCount": zod.number().int(),
+  "createdCount": zod.number().int(),
+  "updatedCount": zod.number().int(),
+  "skippedCount": zod.number().int(),
+  "completedAt": zod.coerce.date()
+}),zod.null()]),
+  "syncing": zod.boolean()
+})
+
+
+/**
+ * No URL or request body is accepted. Only completed, bounded imports are reported as catalog totals.
+ * @summary Import the fixed infinihomes.shop public products.json catalog without OAuth
+ */
+export const SyncPublicCatalogResponse = zod.object({
+  "shop": zod.string(),
+  "totalPublicProducts": zod.number().int(),
+  "furnitureCount": zod.number().int(),
+  "mattressCount": zod.number().int(),
+  "otherCount": zod.number().int(),
+  "createdCount": zod.number().int(),
+  "updatedCount": zod.number().int(),
+  "skippedCount": zod.number().int(),
+  "completedAt": zod.coerce.date()
+})
+
+

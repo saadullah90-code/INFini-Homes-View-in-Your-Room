@@ -181,6 +181,7 @@ export interface StorefrontConnectResult {
  */
 export async function connectStorefrontProduct(
   input: StorefrontConnectInput,
+  options: { recordFrontendHeartbeat?: boolean } = {},
 ): Promise<StorefrontConnectResult> {
   const { eligible, reason } = isEligibleProduct(input.productType, input.title);
   const imageUrls = input.imageUrls;
@@ -256,12 +257,14 @@ export async function connectStorefrontProduct(
     }
   }
 
-  await recordHeartbeat({
-    shop: input.shop,
-    lastProductHandle: input.handle,
-    lastProductId: input.productId,
-    lastProductConnectionStatus: connectionStatus,
-  });
+  if (options.recordFrontendHeartbeat !== false) {
+    await recordHeartbeat({
+      shop: input.shop,
+      lastProductHandle: input.handle,
+      lastProductId: input.productId,
+      lastProductConnectionStatus: connectionStatus,
+    });
+  }
 
   return { connected: true, eligible, status: connectionStatus };
 }
@@ -315,18 +318,18 @@ export async function getStorefrontConnectionStatus(): Promise<StorefrontConnect
   const [connectedCountRow] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(productsTable)
-    .where(eq(productsTable.source, STOREFRONT_SOURCE));
+    .where(and(eq(productsTable.source, STOREFRONT_SOURCE), sql`${productsTable.handle} not like 'test-%'`));
 
   const [eligibleCountRow] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(productsTable)
-    .where(and(eq(productsTable.source, STOREFRONT_SOURCE), eq(productsTable.eligible, true)));
+    .where(and(eq(productsTable.source, STOREFRONT_SOURCE), eq(productsTable.eligible, true), sql`${productsTable.handle} not like 'test-%'`));
 
   const [publishedCountRow] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(productModelsTable)
     .innerJoin(productsTable, eq(productModelsTable.productId, productsTable.id))
-    .where(and(eq(productsTable.source, STOREFRONT_SOURCE), eq(productModelsTable.status, "PUBLISHED")));
+    .where(and(eq(productsTable.source, STOREFRONT_SOURCE), eq(productModelsTable.status, "PUBLISHED"), sql`${productsTable.handle} not like 'test-%'`));
 
   return {
     allowedShops: Array.from(ALLOWED_STOREFRONT_SHOPS),

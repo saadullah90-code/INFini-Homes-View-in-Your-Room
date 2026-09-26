@@ -31,6 +31,8 @@ import type {
   LogEntry,
   Product,
   ProductModel,
+  PublicCatalogStatus,
+  PublicCatalogSyncResult,
   ReviewApproveRequest,
   ReviewRejectRequest,
   SettingsUpdate,
@@ -1744,4 +1746,156 @@ export function useGetStorefrontConnectionStatus<TData = Awaited<ReturnType<type
 
 
 
+
+export const getGetPublicCatalogStatusUrl = () => {
+
+
+
+
+  return `/api/admin/public-catalog-status`
+}
+
+/**
+ * @summary Latest completed public Shopify catalog import (not a storefront frontend heartbeat)
+ */
+export const getPublicCatalogStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicCatalogStatus> => {
+
+  return customFetch<PublicCatalogStatus>(getGetPublicCatalogStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicCatalogStatusQueryKey = () => {
+    return [
+    `/api/admin/public-catalog-status`
+    ] as const;
+    }
+
+
+export const getGetPublicCatalogStatusQueryOptions = <TData = Awaited<ReturnType<typeof getPublicCatalogStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalogStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicCatalogStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicCatalogStatus>>> = ({ signal }) => getPublicCatalogStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalogStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicCatalogStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicCatalogStatus>>>
+export type GetPublicCatalogStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Latest completed public Shopify catalog import (not a storefront frontend heartbeat)
+ */
+
+export function useGetPublicCatalogStatus<TData = Awaited<ReturnType<typeof getPublicCatalogStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalogStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicCatalogStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSyncPublicCatalogUrl = () => {
+
+
+
+
+  return `/api/admin/public-catalog-sync`
+}
+
+/**
+ * No URL or request body is accepted. Only completed, bounded imports are reported as catalog totals.
+ * @summary Import the fixed infinihomes.shop public products.json catalog without OAuth
+ */
+export const syncPublicCatalog = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicCatalogSyncResult> => {
+
+  return customFetch<PublicCatalogSyncResult>(getSyncPublicCatalogUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncPublicCatalogMutationKey = () => ['syncPublicCatalog'] as const;
+
+export const getSyncPublicCatalogMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPublicCatalog>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncPublicCatalog>>, TError,void, TContext> => {
+
+const mutationKey = getSyncPublicCatalogMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncPublicCatalog>>, void> = () => {
+
+
+          return  syncPublicCatalog(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncPublicCatalogMutationResult = NonNullable<Awaited<ReturnType<typeof syncPublicCatalog>>>
+
+    export type SyncPublicCatalogMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Import the fixed infinihomes.shop public products.json catalog without OAuth
+ */
+export const useSyncPublicCatalog = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPublicCatalog>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncPublicCatalog>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncPublicCatalogMutationOptions(options));
+    }
 

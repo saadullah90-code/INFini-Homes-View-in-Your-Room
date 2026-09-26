@@ -37,8 +37,8 @@ const storefrontCors = cors({
       return;
     }
     try {
-      const { hostname } = new URL(origin);
-      callback(null, ALLOWED_STOREFRONT_SHOPS.has(hostname));
+      const url = new URL(origin);
+      callback(null, url.protocol === "https:" && !url.port && ALLOWED_STOREFRONT_SHOPS.has(url.hostname));
     } catch {
       callback(null, false);
     }
@@ -48,6 +48,10 @@ const storefrontCors = cors({
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
 });
+
+// JSON POSTs from Shopify preflight before the POST route is reached.
+router.options("/storefront/connect", storefrontCors);
+router.options("/storefront/model", storefrontCors);
 
 // Minimal in-memory sliding-window limiter, scoped to this router only.
 // Deliberately dependency-free -- this is the only public, unauthenticated

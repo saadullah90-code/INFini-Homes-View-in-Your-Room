@@ -26,7 +26,7 @@
   data-product-title="{{ product.title | escape }}"
   data-product-type="{{ product.type | escape }}"
   data-product-vendor="{{ product.vendor | escape }}"
-  data-product-url="{{ product.url | within: collection }}"
+  data-product-url="{{ product.url }}"
   data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
   data-shop-domain="{{ shop.permanent_domain }}"
   data-shop-storefront-domain="{{ request.host }}"
@@ -50,14 +50,14 @@
             <p>Loading 3D model…</p>
           </div>
           <div class="viyr-state viyr-state--error" data-viyr-error hidden>
-            <p>We couldn't load the 3D model right now. Please try again in a moment.</p>
+            <p data-viyr-error-message>We couldn't load the 3D model right now. Please try again in a moment.</p>
           </div>
           <!-- <model-viewer> is inserted here by JS once the script has loaded and a model is confirmed available. -->
         </div>
 
         <div class="viyr-side">
           <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
-          <p class="viyr-side__hint">Drag to rotate &middot; Pinch or scroll to zoom</p>
+          <p class="viyr-side__hint" data-viyr-hint>Drag to rotate &middot; Pinch or scroll to zoom</p>
 
           <button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden>
             View in your space (AR)
@@ -87,6 +87,7 @@
     <div class="viyr-debug__row"><span>Product connect</span><span data-viyr-debug-connect>—</span></div>
     <div class="viyr-debug__row"><span>Eligibility</span><span data-viyr-debug-eligible>—</span></div>
     <div class="viyr-debug__row"><span>Model status</span><span data-viyr-debug-model>—</span></div>
+    <div class="viyr-debug__row"><span>Images</span><span data-viyr-debug-images>—</span></div>
     <div class="viyr-debug__row"><span>Last API response</span></div>
     <pre data-viyr-debug-response>—</pre>
   </div>
@@ -216,23 +217,15 @@
   const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
   const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
 
-  // Prevent duplicate rendering if this Custom Liquid block is accidentally
-  // added to the template twice -- only the first instance on the page runs.
-  if (window.__viyrInitialized) return;
-  window.__viyrInitialized = true;
-
-  // NOTE: the markup above closes </div> for .viyr-root before this <style>
-  // and <script> tag -- they are siblings of .viyr-root, not descendants of
-  // it. `document.currentScript.closest(".viyr-root")` can therefore never
-  // find it (closest() only walks the element itself and its ancestors, not
-  // siblings), and since document.currentScript is non-null for a normal
-  // inline script in every real browser, the old code's fallback branch
-  // never ran, silently aborting initialization below and leaving the click
-  // handler unattached. This file only ever supports a single instance per
-  // page (see the guard above), so looking it up directly is both correct
-  // and simpler.
-  const root = document.querySelector(".viyr-root[data-viyr-instance]");
-  if (!root) return;
+  // The global bootstrap survives Shopify's section replacement. Each new
+  // DOM root gets its own handlers; existing roots are never initialized twice.
+  if (window.__viyrBootstrap) {
+    window.__viyrBootstrap();
+    return;
+  }
+  function initRoot(root) {
+  if (root.dataset.viyrReady) return;
+  root.dataset.viyrReady = "true";
 
   const productHandle = root.dataset.productHandle;
   const shopStorefrontDomain = root.dataset.shopStorefrontDomain || window.location.hostname;
@@ -240,12 +233,29 @@
   const productTitle = root.dataset.productTitle || "";
   const productType = root.dataset.productType || "";
   const productVendor = root.dataset.productVendor || "";
-  const productUrl = root.dataset.productUrl || "";
+  // product.url without `within: collection` always points to /products/...
+  const productUrl = "/products/" + encodeURIComponent(productHandle);
   let productImageUrls = [];
+  let imageParseError = "";
   try {
-    productImageUrls = JSON.parse(root.dataset.productImageUrls || "[]");
+    const images = JSON.parse(root.dataset.productImageUrls || "[]");
+    if (!Array.isArray(images)) throw new Error("Images are not an array");
+    // Liquid's image.src on the live store resolves to
+    // //infinihomes.shop/cdn/shop/files/..., while /connect accepts only
+    // absolute https://cdn.shopify.com URLs. The CDN file root below is
+    // verified against this shop's public /products.json images.
+    const shopifyFileRoot = "https://cdn.shopify.com/s/files/1/0625/5892/8940/";
+    productImageUrls = images.map((image) => {
+      const url = new URL(image, window.location.origin);
+      if (url.hostname === "cdn.shopify.com" && url.protocol === "https:") return url.href;
+      if ((url.hostname === shopStorefrontDomain || url.hostname === "infinihomes.shop" || url.hostname === "www.infinihomes.shop")
+        && /^\/cdn\/shop\/(files|products)\//.test(url.pathname)) {
+        return shopifyFileRoot + url.pathname.replace(/^\/cdn\/shop\//, "") + url.search;
+      }
+      throw new Error("Unsupported image host or path");
+    });
   } catch (err) {
-    productImageUrls = [];
+    imageParseError = String(err);
   }
 
   // Diagnostic panel: only ever activated by ?view_ar_debug=1. Nothing here
@@ -260,6 +270,7 @@
         connect: root.querySelector("[data-viyr-debug-connect]"),
         eligible: root.querySelector("[data-viyr-debug-eligible]"),
         model: root.querySelector("[data-viyr-debug-model]"),
+        images: root.querySelector("[data-viyr-debug-images]"),
         response: root.querySelector("[data-viyr-debug-response]"),
       }
     : null;
@@ -270,6 +281,7 @@
   function setDebug(field, value) {
     if (debugEls && debugEls[field]) debugEls[field].textContent = value;
   }
+  setDebug("images", imageParseError || productImageUrls.length + " Shopify CDN URL(s)");
 
   const els = {
     button: root.querySelector("[data-viyr-open]"),
@@ -278,7 +290,9 @@
     viewerWrap: root.querySelector("[data-viyr-viewer-wrap]"),
     loading: root.querySelector("[data-viyr-loading]"),
     error: root.querySelector("[data-viyr-error]"),
+    errorMessage: root.querySelector("[data-viyr-error-message]"),
     title: root.querySelector("[data-viyr-title]"),
+    hint: root.querySelector("[data-viyr-hint]"),
     arBtn: root.querySelector("[data-viyr-ar-btn]"),
     arNote: root.querySelector("[data-viyr-ar-note]"),
     qrWrap: root.querySelector("[data-viyr-qr-wrap]"),
@@ -287,8 +301,12 @@
   };
 
   let modelData = null; // populated once the backend confirms a published model
+  let eligible = false;
+  let availabilityChecking = true;
+  let availabilityFailed = false;
   let modelViewerLoadPromise = null;
   let modelViewerEl = null;
+  let viewerTimer = null;
   // Set synchronously (before the first `await` in openModal) so a burst of
   // rapid clicks -- which all run their synchronous prelude before any of
   // them resumes after `await ensureModelViewer()` -- can't all see
@@ -296,17 +314,35 @@
   let modelViewerBuildStarted = false;
 
   function loadScriptOnce(src) {
-    return new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-viyr-loaded="' + src + '"]');
-      if (existing) { resolve(); return; }
+    window.__viyrScriptPromises = window.__viyrScriptPromises || {};
+    if (window.__viyrScriptPromises[src]) return window.__viyrScriptPromises[src];
+    const promise = new Promise((resolve, reject) => {
       const s = document.createElement("script");
       s.src = src;
-      s.type = "module";
+      if (src === MODEL_VIEWER_SRC) s.type = "module";
       s.setAttribute("data-viyr-loaded", src);
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error("Failed to load " + src));
+      const timer = setTimeout(() => reject(new Error("Script loading timed out")), 12000);
+      s.onload = () => { clearTimeout(timer); resolve(); };
+      s.onerror = () => { clearTimeout(timer); reject(new Error("Failed to load " + src)); };
       document.head.appendChild(s);
     });
+    window.__viyrScriptPromises[src] = promise.catch((err) => {
+      delete window.__viyrScriptPromises[src];
+      const script = document.querySelector('script[data-viyr-loaded="' + src + '"]');
+      if (script) script.remove();
+      throw err;
+    });
+    return window.__viyrScriptPromises[src];
+  }
+
+  async function fetchWithTimeout(url, options) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   function isMobileDevice() {
@@ -321,7 +357,7 @@
       + "?shop=" + encodeURIComponent(shopStorefrontDomain)
       + "&product_handle=" + encodeURIComponent(productHandle);
 
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("Storefront API returned " + res.status);
     const data = await res.json();
     if (typeof data.available !== "boolean") throw new Error("Invalid storefront API response");
@@ -336,12 +372,12 @@
   // published model worth showing even if this particular connect call
   // fails (e.g. a transient network error).
   async function connectProduct() {
-    if (!productId || !productHandle || !productImageUrls.length) {
-      setDebug("connect", "skipped (missing product data)");
+    if (!productId || !productHandle || !productImageUrls.length || imageParseError) {
+      setDebug("connect", imageParseError || "skipped (missing product data)");
       return null;
     }
     try {
-      const res = await fetch(CONNECT_ENDPOINT, {
+      const res = await fetchWithTimeout(CONNECT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -357,13 +393,16 @@
       });
       const data = await res.json().catch(() => null);
       setDebug("backend", res.ok ? "online" : "error (" + res.status + ")");
-      setDebug("connect", res.ok && data ? data.status : "failed");
+      setDebug("connect", res.ok && data ? data.status : "failed (" + res.status + ")");
       setDebug(
         "eligible",
         data && typeof data.eligible === "boolean" ? (data.eligible ? "eligible" : "not eligible") : "unknown",
       );
       setDebug("response", JSON.stringify(data, null, 2));
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn("[View in Your Room] connect rejected:", res.status, data && data.error);
+        return null;
+      }
       return data;
     } catch (err) {
       setDebug("backend", "offline");
@@ -375,28 +414,36 @@
   }
 
   async function initAvailability() {
-    await connectProduct();
+    const connection = await connectProduct();
+    if (connection && connection.eligible === true) {
+      eligible = true;
+      els.button.hidden = false;
+    }
     try {
       const data = await fetchModelAvailability();
+      availabilityFailed = false;
       setDebug("backend", "online");
       setDebug("model", data.available ? "published" : "not available");
-      if (data.available) {
+      if (data.available && data.modelUrl) {
         modelData = data;
         els.button.hidden = false;
 
-        // Mobile auto-AR: only ever triggered when a published model is
-        // confirmed to exist -- never opens anything speculative.
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("view_ar") === "1") {
-          openModal();
-        }
+      } else if (data.available) {
+        throw new Error("Published model response has no model URL");
       }
+      availabilityChecking = false;
+      // QR/mobile auto-open only after the published model is confirmed.
+      if ((!els.modal.hidden || (modelData && new URLSearchParams(window.location.search).get("view_ar") === "1"))
+        && root.isConnected) openModal();
     } catch (err) {
-      // Backend unavailable / invalid response: fail closed -- no button,
-      // no broken UI, nothing shown to the customer.
+      // A confirmed eligible product retains its button. Never claim a model
+      // is ready when the availability request failed.
+      availabilityFailed = true;
+      availabilityChecking = false;
       setDebug("backend", "offline");
-      setDebug("model", "check failed");
+      setDebug("model", "check failed: " + String(err));
       console.warn("[View in Your Room] availability check failed:", err);
+      if (!els.modal.hidden && root.isConnected) openModal();
     }
   }
 
@@ -428,13 +475,16 @@
   }
 
   function onViewerLoad() {
+    clearTimeout(viewerTimer);
     els.loading.hidden = true;
     els.error.hidden = true;
   }
 
   function onViewerError() {
+    clearTimeout(viewerTimer);
     els.loading.hidden = true;
     els.error.hidden = false;
+    els.errorMessage.textContent = "We couldn't load the 3D model right now. Please try again in a moment.";
   }
 
   function setupArButton() {
@@ -485,21 +535,41 @@
   }
 
   async function openModal() {
-    if (!modelData) return; // safety net: never open without a confirmed model
+    if (!modelData && !eligible) return;
 
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
-    els.title.textContent = modelData.title || "";
-    els.loading.hidden = false;
-    els.error.hidden = true;
+    els.title.textContent = (modelData && modelData.title) || productTitle;
+    els.hint.hidden = !modelData;
+    els.loading.hidden = !!modelViewerEl || !modelData;
+    els.error.hidden = !!modelData;
+    els.arBtn.hidden = true;
+    els.arNote.hidden = true;
+    els.qrWrap.hidden = true;
     document.body.style.overflow = "hidden";
+
+    if (!modelData) {
+      els.errorMessage.textContent = availabilityChecking
+        ? "Checking whether this product's 3D model is ready…"
+        : availabilityFailed
+        ? "We can't check this product's 3D model right now. Please try again later."
+        : "The 3D model for this product isn't ready yet. Please check back soon.";
+      return;
+    }
 
     if (!modelViewerEl && !modelViewerBuildStarted) {
       modelViewerBuildStarted = true;
       try {
         await ensureModelViewer();
+        if (!root.isConnected) return;
         modelViewerEl = buildModelViewer();
         els.viewerWrap.appendChild(modelViewerEl);
+        viewerTimer = setTimeout(() => {
+          if (!els.modal.hidden && els.loading.hidden === false) {
+            onViewerError();
+            setDebug("model", "3D model loading timed out");
+          }
+        }, 20000);
       } catch (err) {
         console.warn("[View in Your Room] model-viewer failed to load:", err);
         modelViewerBuildStarted = false; // allow a retry on the next open
@@ -524,5 +594,13 @@
   });
 
   initAvailability();
+  }
+
+  function initAll() {
+    document.querySelectorAll(".viyr-root[data-viyr-instance]").forEach(initRoot);
+  }
+  window.__viyrBootstrap = initAll;
+  document.addEventListener("shopify:section:load", initAll);
+  initAll();
 })();
 </script>

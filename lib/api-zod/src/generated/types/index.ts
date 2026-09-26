@@ -28,6 +28,8 @@ export * from './productModelStatus';
 export * from './productSource';
 export * from './providerStatus';
 export * from './providerStatusMode';
+export * from './publicCatalogStatus';
+export * from './publicCatalogSyncResult';
 export * from './reviewApproveRequest';
 export * from './reviewRejectRequest';
 export * from './settingsUpdate';

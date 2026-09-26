@@ -433,6 +433,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/StorefrontConnectionStatus"
 
+  /admin/public-catalog-status:
+    get:
+      operationId: getPublicCatalogStatus
+      tags: [admin]
+      summary: Latest completed public Shopify catalog import (not a storefront frontend heartbeat)
+      responses:
+        "200":
+          description: Last completed import, if any
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCatalogStatus"
+
+  /admin/public-catalog-sync:
+    post:
+      operationId: syncPublicCatalog
+      tags: [admin]
+      summary: Import the fixed infinihomes.shop public products.json catalog without OAuth
+      description: No URL or request body is accepted. Only completed, bounded imports are reported as catalog totals.
+      responses:
+        "200":
+          description: Completed import totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCatalogSyncResult"
+        "409":
+          description: Import already in progress
+        "502":
+          description: Public fetch or import incomplete; prior completed totals unchanged
+
 components:
   parameters:
     ProductId:
@@ -790,3 +821,27 @@ components:
         - connectedProductCount
         - eligibleProductCount
         - publishedModelCount
+
+    PublicCatalogSyncResult:
+      type: object
+      properties:
+        shop: { type: string }
+        totalPublicProducts: { type: integer }
+        furnitureCount: { type: integer }
+        mattressCount: { type: integer }
+        otherCount: { type: integer }
+        createdCount: { type: integer }
+        updatedCount: { type: integer }
+        skippedCount: { type: integer }
+        completedAt: { type: string, format: date-time }
+      required: [shop, totalPublicProducts, furnitureCount, mattressCount, otherCount, createdCount, updatedCount, skippedCount, completedAt]
+
+    PublicCatalogStatus:
+      type: object
+      properties:
+        lastCompletedSync:
+          oneOf:
+            - $ref: "#/components/schemas/PublicCatalogSyncResult"
+            - type: "null"
+        syncing: { type: boolean }
+      required: [lastCompletedSync, syncing]
