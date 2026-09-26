@@ -32,4 +32,8 @@ export * from './reviewApproveRequest';
 export * from './reviewRejectRequest';
 export * from './settingsUpdate';
 export * from './settingsUpdateDefaultUnit';
+export * from './storefrontConnectionStatus';
+export * from './storefrontConnectRequest';
+export * from './storefrontConnectResponse';
+export * from './storefrontConnectResponseStatus';
 export * from './storefrontModel';

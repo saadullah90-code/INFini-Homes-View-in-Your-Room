@@ -42,6 +42,7 @@ export type ProductSource = typeof ProductSource[keyof typeof ProductSource];
 export const ProductSource = {
   sample: 'sample',
   shopify: 'shopify',
+  storefront: 'storefront',
 } as const;
 
 export interface Product {
@@ -277,6 +278,57 @@ export interface StorefrontModel {
   /** @nullable */
   thumbnailUrl?: string | null;
   arUrl?: string;
+}
+
+/**
+ * Only public Shopify product fields. Never accepts a Shopify access token, API secret, database credential, or any other secret -- rejecting unknown fields is the server's job, not this schema's, but no such field is defined here to accept in the first place.
+ */
+export interface StorefrontConnectRequest {
+  /** Storefront domain, e.g. infinihomes.shop */
+  shop: string;
+  /** Shopify numeric product id, as exposed by Liquid's product.id */
+  productId: string;
+  handle: string;
+  title: string;
+  productType?: string;
+  vendor?: string;
+  /** Absolute or store-relative product page URL */
+  productUrl: string;
+  imageUrls: string[];
+}
+
+export type StorefrontConnectResponseStatus = typeof StorefrontConnectResponseStatus[keyof typeof StorefrontConnectResponseStatus];
+
+
+export const StorefrontConnectResponseStatus = {
+  created: 'created',
+  updated: 'updated',
+} as const;
+
+export interface StorefrontConnectResponse {
+  connected: boolean;
+  eligible: boolean;
+  status: StorefrontConnectResponseStatus;
+}
+
+/**
+ * Status of the no-OAuth storefront connect/model flow only. Kept entirely separate from the Shopify Admin API OAuth status reported by /status -- this must never claim OAuth is connected.
+ */
+export interface StorefrontConnectionStatus {
+  allowedShops: string[];
+  backendOnline: boolean;
+  frontendConnected: boolean;
+  /** @nullable */
+  lastSeenAt: string | null;
+  /** @nullable */
+  lastProductHandle: string | null;
+  /** @nullable */
+  lastProductId: string | null;
+  /** @nullable */
+  lastProductConnectionStatus: string | null;
+  connectedProductCount: number;
+  eligibleProductCount: number;
+  publishedModelCount: number;
 }
 
 export type GetStorefrontModelParams = {

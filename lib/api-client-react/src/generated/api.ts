@@ -34,6 +34,9 @@ import type {
   ReviewApproveRequest,
   ReviewRejectRequest,
   SettingsUpdate,
+  StorefrontConnectRequest,
+  StorefrontConnectResponse,
+  StorefrontConnectionStatus,
   StorefrontModel
 } from './api.schemas';
 
@@ -1563,6 +1566,173 @@ export function useGetStorefrontModel<TData = Awaited<ReturnType<typeof getStore
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetStorefrontModelQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getConnectStorefrontProductUrl = () => {
+
+
+
+
+  return `/api/storefront/connect`
+}
+
+/**
+ * Called automatically by the Custom Liquid frontend when a shopper views a product page. Accepts only public Shopify product fields -- never a token, secret, or credential. Validates the shop against the storefront allowlist, validates the handle/product id format, and only accepts Shopify CDN image URLs. Eligibility (Furniture/Mattress only) is always decided server-side and can never be set by the caller. Never triggers 3D model generation.
+ * @summary Register (or refresh) a Shopify product from the public storefront, without OAuth
+ */
+export const connectStorefrontProduct = async (storefrontConnectRequest: StorefrontConnectRequest, options?: Parameters<typeof customFetch>[1]): Promise<StorefrontConnectResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StorefrontConnectResponse>(getConnectStorefrontProductUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(storefrontConnectRequest)
+  }
+);}
+
+
+
+
+
+export const getConnectStorefrontProductMutationKey = () => ['connectStorefrontProduct'] as const;
+
+export const getConnectStorefrontProductMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectStorefrontProduct>>, TError,ConnectStorefrontProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connectStorefrontProduct>>, TError,ConnectStorefrontProductMutationVariables, TContext> => {
+
+const mutationKey = getConnectStorefrontProductMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connectStorefrontProduct>>, ConnectStorefrontProductMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  connectStorefrontProduct(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnectStorefrontProductMutationResult = NonNullable<Awaited<ReturnType<typeof connectStorefrontProduct>>>
+    export type ConnectStorefrontProductMutationBody = BodyType<StorefrontConnectRequest>
+    export type ConnectStorefrontProductMutationError = ErrorType<void>
+    export type ConnectStorefrontProductMutationVariables = {data: BodyType<StorefrontConnectRequest>}
+
+    /**
+ * @summary Register (or refresh) a Shopify product from the public storefront, without OAuth
+ */
+export const useConnectStorefrontProduct = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectStorefrontProduct>>, TError,ConnectStorefrontProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof connectStorefrontProduct>>,
+        TError,
+        ConnectStorefrontProductMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConnectStorefrontProductMutationOptions(options));
+    }
+
+export const getGetStorefrontConnectionStatusUrl = () => {
+
+
+
+
+  return `/api/admin/storefront-status`
+}
+
+/**
+ * Reports whether the Custom Liquid storefront frontend has recently checked in, and counts of products it has registered. Entirely separate from the Shopify Admin API OAuth status reported by /status -- this reflects the public storefront connect/model endpoints only, never OAuth install state.
+ * @summary Storefront (no-OAuth) connection status, for the admin dashboard Settings page
+ */
+export const getStorefrontConnectionStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<StorefrontConnectionStatus> => {
+
+  return customFetch<StorefrontConnectionStatus>(getGetStorefrontConnectionStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorefrontConnectionStatusQueryKey = () => {
+    return [
+    `/api/admin/storefront-status`
+    ] as const;
+    }
+
+
+export const getGetStorefrontConnectionStatusQueryOptions = <TData = Awaited<ReturnType<typeof getStorefrontConnectionStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontConnectionStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorefrontConnectionStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorefrontConnectionStatus>>> = ({ signal }) => getStorefrontConnectionStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorefrontConnectionStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorefrontConnectionStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getStorefrontConnectionStatus>>>
+export type GetStorefrontConnectionStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Storefront (no-OAuth) connection status, for the admin dashboard Settings page
+ */
+
+export function useGetStorefrontConnectionStatus<TData = Awaited<ReturnType<typeof getStorefrontConnectionStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontConnectionStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorefrontConnectionStatusQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

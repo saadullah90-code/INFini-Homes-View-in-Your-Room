@@ -15,4 +15,5 @@ export type ProductSource = typeof ProductSource[keyof typeof ProductSource];
 export const ProductSource = {
   sample: 'sample',
   shopify: 'shopify',
+  storefront: 'storefront',
 } as const;

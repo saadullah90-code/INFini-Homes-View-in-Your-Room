@@ -21,8 +21,13 @@
   class="viyr-root"
   id="viyr-root-{{ product.id }}"
   data-viyr-instance
+  data-product-id="{{ product.id }}"
   data-product-handle="{{ product.handle }}"
+  data-product-title="{{ product.title | escape }}"
+  data-product-type="{{ product.type | escape }}"
+  data-product-vendor="{{ product.vendor | escape }}"
   data-product-url="{{ product.url | within: collection }}"
+  data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
   data-shop-domain="{{ shop.permanent_domain }}"
   data-shop-storefront-domain="{{ request.host }}"
 >
@@ -69,6 +74,21 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Diagnostic panel: only ever shown when the page URL has ?view_ar_debug=1.
+       No secret, token, or credential is ever placed in this markup or the
+       script that fills it in -- only shop/product identifiers and status
+       words. -->
+  <div class="viyr-debug" data-viyr-debug hidden>
+    <div class="viyr-debug__title">View in Your Room — Debug</div>
+    <div class="viyr-debug__row"><span>Shop</span><span data-viyr-debug-shop>—</span></div>
+    <div class="viyr-debug__row"><span>Backend</span><span data-viyr-debug-backend>—</span></div>
+    <div class="viyr-debug__row"><span>Product connect</span><span data-viyr-debug-connect>—</span></div>
+    <div class="viyr-debug__row"><span>Eligibility</span><span data-viyr-debug-eligible>—</span></div>
+    <div class="viyr-debug__row"><span>Model status</span><span data-viyr-debug-model>—</span></div>
+    <div class="viyr-debug__row"><span>Last API response</span></div>
+    <pre data-viyr-debug-response>—</pre>
   </div>
 </div>
 
@@ -166,6 +186,18 @@
     .viyr-viewer-wrap { flex: 1 1 55%; }
     .viyr-side { flex: 1 1 45%; }
   }
+
+  .viyr-debug {
+    margin: 14px 0; padding: 14px 16px; border-radius: 10px;
+    background: #0b1220; color: #d7e6ff; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    max-width: 480px;
+  }
+  .viyr-debug[hidden] { display: none; }
+  .viyr-debug__title { font-weight: 700; margin-bottom: 8px; color: #ffffff; }
+  .viyr-debug__row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .viyr-debug__row span:first-child { color: #93a4c3; }
+  .viyr-debug pre { white-space: pre-wrap; word-break: break-all; margin: 6px 0 0; max-height: 160px; overflow: auto; background: rgba(255,255,255,0.06); padding: 8px; border-radius: 6px; }
 </style>
 
 <script>
@@ -178,7 +210,9 @@
   const VIEW_IN_YOUR_ROOM_API = "https://22a9ae4d-ce01-4ecf-8256-285c64105e6d-00-1e8puxyeezg0r.sisko.replit.dev";
   // =========================================================================
 
-  const STOREFRONT_ENDPOINT = VIEW_IN_YOUR_ROOM_API.replace(/\/$/, "") + "/api/storefront/model";
+  const API_BASE = VIEW_IN_YOUR_ROOM_API.replace(/\/$/, "");
+  const STOREFRONT_ENDPOINT = API_BASE + "/api/storefront/model";
+  const CONNECT_ENDPOINT = API_BASE + "/api/storefront/connect";
   const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
   const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
 
@@ -202,6 +236,40 @@
 
   const productHandle = root.dataset.productHandle;
   const shopStorefrontDomain = root.dataset.shopStorefrontDomain || window.location.hostname;
+  const productId = root.dataset.productId || "";
+  const productTitle = root.dataset.productTitle || "";
+  const productType = root.dataset.productType || "";
+  const productVendor = root.dataset.productVendor || "";
+  const productUrl = root.dataset.productUrl || "";
+  let productImageUrls = [];
+  try {
+    productImageUrls = JSON.parse(root.dataset.productImageUrls || "[]");
+  } catch (err) {
+    productImageUrls = [];
+  }
+
+  // Diagnostic panel: only ever activated by ?view_ar_debug=1. Nothing here
+  // reads or displays a secret -- only shop/product identifiers and status
+  // words already safe to show a merchant testing the integration.
+  const debugEnabled = new URLSearchParams(window.location.search).get("view_ar_debug") === "1";
+  const debugEls = debugEnabled
+    ? {
+        panel: root.querySelector("[data-viyr-debug]"),
+        shop: root.querySelector("[data-viyr-debug-shop]"),
+        backend: root.querySelector("[data-viyr-debug-backend]"),
+        connect: root.querySelector("[data-viyr-debug-connect]"),
+        eligible: root.querySelector("[data-viyr-debug-eligible]"),
+        model: root.querySelector("[data-viyr-debug-model]"),
+        response: root.querySelector("[data-viyr-debug-response]"),
+      }
+    : null;
+  if (debugEls && debugEls.panel) {
+    debugEls.panel.hidden = false;
+    if (debugEls.shop) debugEls.shop.textContent = shopStorefrontDomain + " / " + productHandle;
+  }
+  function setDebug(field, value) {
+    if (debugEls && debugEls[field]) debugEls[field].textContent = value;
+  }
 
   const els = {
     button: root.querySelector("[data-viyr-open]"),
@@ -260,9 +328,58 @@
     return data;
   }
 
+  // Registers/refreshes this product with the backend so it shows up in the
+  // admin dashboard's review pipeline -- no Shopify OAuth involved, only the
+  // public fields already rendered into this page by Liquid. A failure here
+  // never blocks the model-availability check right after it: a product
+  // that was already connected on an earlier page view can still have a
+  // published model worth showing even if this particular connect call
+  // fails (e.g. a transient network error).
+  async function connectProduct() {
+    if (!productId || !productHandle || !productImageUrls.length) {
+      setDebug("connect", "skipped (missing product data)");
+      return null;
+    }
+    try {
+      const res = await fetch(CONNECT_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          shop: shopStorefrontDomain,
+          productId: productId,
+          handle: productHandle,
+          title: productTitle,
+          productType: productType,
+          vendor: productVendor,
+          productUrl: productUrl,
+          imageUrls: productImageUrls,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      setDebug("backend", res.ok ? "online" : "error (" + res.status + ")");
+      setDebug("connect", res.ok && data ? data.status : "failed");
+      setDebug(
+        "eligible",
+        data && typeof data.eligible === "boolean" ? (data.eligible ? "eligible" : "not eligible") : "unknown",
+      );
+      setDebug("response", JSON.stringify(data, null, 2));
+      if (!res.ok) return null;
+      return data;
+    } catch (err) {
+      setDebug("backend", "offline");
+      setDebug("connect", "failed");
+      setDebug("response", String(err));
+      console.warn("[View in Your Room] connect failed:", err);
+      return null;
+    }
+  }
+
   async function initAvailability() {
+    await connectProduct();
     try {
       const data = await fetchModelAvailability();
+      setDebug("backend", "online");
+      setDebug("model", data.available ? "published" : "not available");
       if (data.available) {
         modelData = data;
         els.button.hidden = false;
@@ -277,6 +394,8 @@
     } catch (err) {
       // Backend unavailable / invalid response: fail closed -- no button,
       // no broken UI, nothing shown to the customer.
+      setDebug("backend", "offline");
+      setDebug("model", "check failed");
       console.warn("[View in Your Room] availability check failed:", err);
     }
   }

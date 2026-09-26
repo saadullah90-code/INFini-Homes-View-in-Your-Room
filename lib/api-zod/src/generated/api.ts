@@ -37,7 +37,7 @@ export const ListProductsResponseItem = zod.object({
   "depth": zod.number().nullish(),
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
 }).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
-  "source": zod.enum(['sample', 'shopify']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
+  "source": zod.enum(['sample', 'shopify', 'storefront']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -68,7 +68,7 @@ export const GetProductResponse = zod.object({
   "depth": zod.number().nullish(),
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
 }).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
-  "source": zod.enum(['sample', 'shopify']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
+  "source": zod.enum(['sample', 'shopify', 'storefront']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -98,7 +98,7 @@ export const RecheckProductEligibilityResponse = zod.object({
   "depth": zod.number().nullish(),
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
 }).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
-  "source": zod.enum(['sample', 'shopify']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
+  "source": zod.enum(['sample', 'shopify', 'storefront']).describe('\'sample\' rows are seeded demo data; \'shopify\' rows come from a live store sync.'),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -463,5 +463,45 @@ export const GetStorefrontModelResponse = zod.object({
   "thumbnailUrl": zod.string().nullish(),
   "arUrl": zod.string().optional()
 }).describe('Only ever contains public, already-published data. `available: false` carries no other fields.\n')
+
+
+/**
+ * Called automatically by the Custom Liquid frontend when a shopper views a product page. Accepts only public Shopify product fields -- never a token, secret, or credential. Validates the shop against the storefront allowlist, validates the handle/product id format, and only accepts Shopify CDN image URLs. Eligibility (Furniture/Mattress only) is always decided server-side and can never be set by the caller. Never triggers 3D model generation.
+ * @summary Register (or refresh) a Shopify product from the public storefront, without OAuth
+ */
+export const ConnectStorefrontProductBody = zod.object({
+  "shop": zod.string().describe('Storefront domain, e.g. infinihomes.shop'),
+  "productId": zod.string().describe('Shopify numeric product id, as exposed by Liquid\'s product.id'),
+  "handle": zod.string(),
+  "title": zod.string(),
+  "productType": zod.string().optional(),
+  "vendor": zod.string().optional(),
+  "productUrl": zod.string().describe('Absolute or store-relative product page URL'),
+  "imageUrls": zod.array(zod.string())
+}).describe('Only public Shopify product fields. Never accepts a Shopify access token, API secret, database credential, or any other secret -- rejecting unknown fields is the server\'s job, not this schema\'s, but no such field is defined here to accept in the first place.\n')
+
+export const ConnectStorefrontProductResponse = zod.object({
+  "connected": zod.boolean(),
+  "eligible": zod.boolean(),
+  "status": zod.enum(['created', 'updated'])
+})
+
+
+/**
+ * Reports whether the Custom Liquid storefront frontend has recently checked in, and counts of products it has registered. Entirely separate from the Shopify Admin API OAuth status reported by /status -- this reflects the public storefront connect/model endpoints only, never OAuth install state.
+ * @summary Storefront (no-OAuth) connection status, for the admin dashboard Settings page
+ */
+export const GetStorefrontConnectionStatusResponse = zod.object({
+  "allowedShops": zod.array(zod.string()),
+  "backendOnline": zod.boolean(),
+  "frontendConnected": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullable(),
+  "lastProductHandle": zod.string().nullable(),
+  "lastProductId": zod.string().nullable(),
+  "lastProductConnectionStatus": zod.string().nullable(),
+  "connectedProductCount": zod.number().int(),
+  "eligibleProductCount": zod.number().int(),
+  "publishedModelCount": zod.number().int()
+}).describe('Status of the no-OAuth storefront connect/model flow only. Kept entirely separate from the Shopify Admin API OAuth status reported by /status -- this must never claim OAuth is connected.\n')
 
 

@@ -1,12 +1,23 @@
 import { Router, type IRouter } from "express";
 import cors from "cors";
-import { GetStorefrontModelQueryParams, GetStorefrontModelResponse } from "@workspace/api-zod";
+import {
+  GetStorefrontModelQueryParams,
+  GetStorefrontModelResponse,
+  ConnectStorefrontProductBody,
+  ConnectStorefrontProductResponse,
+  GetStorefrontConnectionStatusResponse,
+} from "@workspace/api-zod";
 import { getAppBaseUrl } from "../lib/shopify-config";
 import {
   ALLOWED_STOREFRONT_SHOPS,
   isAllowedStorefrontShop,
   isValidProductHandle,
+  isValidShopifyProductId,
+  isValidStorefrontProductUrl,
+  isValidShopifyCdnImageUrl,
   getStorefrontModel,
+  connectStorefrontProduct,
+  getStorefrontConnectionStatus,
 } from "../lib/storefront-service";
 
 const router: IRouter = Router();
@@ -32,7 +43,10 @@ const storefrontCors = cors({
       callback(null, false);
     }
   },
-  methods: ["GET"],
+  // GET is used by /storefront/model, POST by /storefront/connect. Both
+  // routes share this same restrictive, shop-allowlisted CORS policy.
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
 });
 
 // Minimal in-memory sliding-window limiter, scoped to this router only.
@@ -91,6 +105,70 @@ router.get("/storefront/model", storefrontCors, async (req, res): Promise<void> 
   const appBaseUrl = getAppBaseUrl(req);
   const result = await getStorefrontModel(productHandle, appBaseUrl);
   res.json(GetStorefrontModelResponse.parse(result));
+});
+
+router.post("/storefront/connect", storefrontCors, async (req, res): Promise<void> => {
+  const clientKey = req.ip ?? "unknown";
+  if (isRateLimited(clientKey)) {
+    res.status(429).json({ error: "Too many requests. Please try again shortly." });
+    return;
+  }
+
+  const parsed = ConnectStorefrontProductBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Missing or invalid product fields." });
+    return;
+  }
+  const body = parsed.data;
+
+  if (!isAllowedStorefrontShop(body.shop)) {
+    res.status(403).json({ error: "This shop is not authorized to use the storefront API." });
+    return;
+  }
+  if (!isValidProductHandle(body.handle)) {
+    res.status(400).json({ error: "Invalid handle." });
+    return;
+  }
+  if (!isValidShopifyProductId(body.productId)) {
+    res.status(400).json({ error: "Invalid productId." });
+    return;
+  }
+  if (!body.title.trim()) {
+    res.status(400).json({ error: "Missing title." });
+    return;
+  }
+  if (!isValidStorefrontProductUrl(body.productUrl)) {
+    res.status(400).json({ error: "Invalid productUrl." });
+    return;
+  }
+  if (body.imageUrls.length === 0 || !body.imageUrls.every(isValidShopifyCdnImageUrl)) {
+    res.status(400).json({ error: "imageUrls must be non-empty Shopify CDN (cdn.shopify.com) URLs." });
+    return;
+  }
+
+  const result = await connectStorefrontProduct({
+    shop: body.shop,
+    productId: body.productId,
+    handle: body.handle,
+    title: body.title,
+    productType: body.productType ?? "",
+    vendor: body.vendor,
+    productUrl: body.productUrl,
+    imageUrls: body.imageUrls,
+  });
+
+  res.json(ConnectStorefrontProductResponse.parse(result));
+});
+
+// Admin-dashboard-only status read. Deliberately NOT mounted under
+// /api/storefront's own CORS handling above (it's still on this router for
+// colocation with the rest of the storefront logic, but its path doesn't
+// start with /storefront) -- it falls through to the app-wide `cors()` in
+// app.ts like every other internal/admin route, since only same-origin
+// admin dashboard traffic is expected to call it.
+router.get("/admin/storefront-status", async (_req, res): Promise<void> => {
+  const status = await getStorefrontConnectionStatus();
+  res.json(GetStorefrontConnectionStatusResponse.parse(status));
 });
 
 export default router;

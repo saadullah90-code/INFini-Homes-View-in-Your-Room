@@ -383,6 +383,56 @@ paths:
         "403":
           description: Shop is not on the storefront allowlist
 
+  /storefront/connect:
+    post:
+      operationId: connectStorefrontProduct
+      tags: [storefront]
+      summary: Register (or refresh) a Shopify product from the public storefront, without OAuth
+      description: >
+        Called automatically by the Custom Liquid frontend when a shopper
+        views a product page. Accepts only public Shopify product fields --
+        never a token, secret, or credential. Validates the shop against the
+        storefront allowlist, validates the handle/product id format, and
+        only accepts Shopify CDN image URLs. Eligibility (Furniture/Mattress
+        only) is always decided server-side and can never be set by the
+        caller. Never triggers 3D model generation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorefrontConnectRequest"
+      responses:
+        "200":
+          description: Product registered or refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontConnectResponse"
+        "400":
+          description: Missing or invalid product fields
+        "403":
+          description: Shop is not on the storefront allowlist
+
+  /admin/storefront-status:
+    get:
+      operationId: getStorefrontConnectionStatus
+      tags: [admin]
+      summary: Storefront (no-OAuth) connection status, for the admin dashboard Settings page
+      description: >
+        Reports whether the Custom Liquid storefront frontend has recently
+        checked in, and counts of products it has registered. Entirely
+        separate from the Shopify Admin API OAuth status reported by
+        /status -- this reflects the public storefront connect/model
+        endpoints only, never OAuth install state.
+      responses:
+        "200":
+          description: Storefront connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontConnectionStatus"
+
 components:
   parameters:
     ProductId:
@@ -440,7 +490,7 @@ components:
             - type: "null"
         source:
           type: string
-          enum: [sample, shopify]
+          enum: [sample, shopify, storefront]
           description: "'sample' rows are seeded demo data; 'shopify' rows come from a live store sync."
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -670,3 +720,73 @@ components:
         arUrl: { type: string }
       required:
         - available
+
+    StorefrontConnectRequest:
+      type: object
+      description: >
+        Only public Shopify product fields. Never accepts a Shopify access
+        token, API secret, database credential, or any other secret --
+        rejecting unknown fields is the server's job, not this schema's, but
+        no such field is defined here to accept in the first place.
+      properties:
+        shop: { type: string, description: "Storefront domain, e.g. infinihomes.shop" }
+        productId: { type: string, description: "Shopify numeric product id, as exposed by Liquid's product.id" }
+        handle: { type: string }
+        title: { type: string }
+        productType: { type: string }
+        vendor: { type: string }
+        productUrl: { type: string, description: "Absolute or store-relative product page URL" }
+        imageUrls:
+          type: array
+          items: { type: string }
+      required:
+        - shop
+        - productId
+        - handle
+        - title
+        - productUrl
+        - imageUrls
+
+    StorefrontConnectResponse:
+      type: object
+      properties:
+        connected: { type: boolean }
+        eligible: { type: boolean }
+        status:
+          type: string
+          enum: [created, updated]
+      required:
+        - connected
+        - eligible
+        - status
+
+    StorefrontConnectionStatus:
+      type: object
+      description: >
+        Status of the no-OAuth storefront connect/model flow only. Kept
+        entirely separate from the Shopify Admin API OAuth status reported
+        by /status -- this must never claim OAuth is connected.
+      properties:
+        allowedShops:
+          type: array
+          items: { type: string }
+        backendOnline: { type: boolean }
+        frontendConnected: { type: boolean }
+        lastSeenAt: { type: ["string", "null"], format: date-time }
+        lastProductHandle: { type: ["string", "null"] }
+        lastProductId: { type: ["string", "null"] }
+        lastProductConnectionStatus: { type: ["string", "null"] }
+        connectedProductCount: { type: integer }
+        eligibleProductCount: { type: integer }
+        publishedModelCount: { type: integer }
+      required:
+        - allowedShops
+        - backendOnline
+        - frontendConnected
+        - lastSeenAt
+        - lastProductHandle
+        - lastProductId
+        - lastProductConnectionStatus
+        - connectedProductCount
+        - eligibleProductCount
+        - publishedModelCount

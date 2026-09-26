@@ -1,0 +1,526 @@
+We need to fix the real storefront integration now.
+
+CURRENT PROBLEM:
+The Custom Liquid frontend is rendering correctly on Shopify, but the "View in Your Room" button is not appearing on actual Furniture/Mattress products.
+
+The current reason is that /api/storefront/model only looks up an existing local product record, while our actual Shopify storefront products are not reliably registered/synced into the Replit database because Shopify OAuth installation is still pending.
+
+I do NOT want the storefront to depend on Shopify Admin OAuth just to make the frontend work.
+
+FINAL STOREFRONT ARCHITECTURE:
+
+SHOPIFY PRODUCT PAGE
+        ↓
+CUSTOM LIQUID
+        ↓
+REPLIT BACKEND URL
+        ↓
+STOREFRONT CONNECTION / PRODUCT REGISTRATION
+        ↓
+REPLIT DATABASE
+        ↓
+PUBLISHED 3D MODEL
+        ↓
+VIEWER / AR
+
+The Replit backend remains the backend.
+
+The Shopify Custom Liquid frontend remains the frontend.
+
+The connection must happen securely through the Replit backend URL.
+
+==================================================
+IMPORTANT
+==================================================
+
+Do NOT remove existing work.
+
+Do NOT:
+- remove admin dashboard
+- remove existing model workflow
+- remove existing /api/ar/:token
+- remove existing /api/storefront/model
+- change Shopify OAuth files
+- change Shopify distribution
+- change Shopify scopes
+- change Shopify credentials
+- start real Meshy generation
+- call Meshy
+- spend Meshy credits
+- modify Shopify product images
+- modify Shopify product prices
+- modify Shopify variants
+- modify Add to Cart
+- change theme code outside our Custom Liquid integration
+
+Do NOT make Shopify OAuth mandatory for the storefront connection.
+
+==================================================
+1. CREATE A STOREFRONT CONNECTION
+==================================================
+
+Create a safe public storefront connection endpoint.
+
+Example:
+
+POST /api/storefront/connect
+
+The Custom Liquid frontend will send only public Shopify product information:
+
+{
+  "shop": "infinihomes.shop",
+  "productId": "...",
+  "handle": "...",
+  "title": "...",
+  "productType": "...",
+  "vendor": "...",
+  "productUrl": "...",
+  "imageUrls": [...]
+}
+
+Do NOT accept or store:
+- Shopify access tokens
+- Shopify API secrets
+- Meshy API keys
+- database credentials
+- session secrets
+
+Only accept valid public Shopify CDN image URLs.
+
+==================================================
+2. STORE / UPDATE THE PRODUCT
+==================================================
+
+When the product page loads, the Custom Liquid frontend should call the connection endpoint.
+
+The backend should:
+
+- validate shop against:
+  infinihomes.shop
+  www.infinihomes.shop
+
+- validate product handle
+- validate Shopify product ID format
+- validate product URL
+- validate image URLs
+- determine eligibility server-side
+
+Eligibility remains:
+
+Furniture
+OR
+Mattress
+
+Everything else remains excluded.
+
+Do NOT rely only on frontend eligibility.
+
+The backend must be authoritative.
+
+If the product already exists:
+- update safe storefront metadata
+- do not create duplicates
+
+If it does not exist:
+- create it
+
+This should NOT trigger 3D generation.
+
+This should NOT consume Meshy credits.
+
+==================================================
+3. IMAGE CHANGE HANDLING
+==================================================
+
+Calculate a stable image-set hash from the received Shopify image URLs.
+
+If images have changed:
+
+- update the product metadata
+- mark the existing model as needing review ONLY if the current architecture already supports this safely
+
+Do NOT automatically generate a new model.
+
+Do NOT call Meshy.
+
+Do NOT spend credits.
+
+If adding a new database status is necessary, STOP and report it before implementing.
+
+Prefer using the existing imageSetHash field if possible.
+
+==================================================
+4. STOREFRONT MODEL ENDPOINT
+==================================================
+
+Keep:
+
+GET /api/storefront/model
+
+But update it so that it works with products registered through the new storefront connection.
+
+It must return:
+
+{
+  "available": false
+}
+
+when:
+- product is not eligible
+- no model exists
+- model is not PUBLISHED
+- published model has no valid model URL
+
+When a PUBLISHED model exists:
+
+{
+  "available": true,
+  "productHandle": "...",
+  "title": "...",
+  "modelUrl": "...",
+  "thumbnailUrl": "...",
+  "arUrl": "..."
+}
+
+Do not expose internal IDs or secrets.
+
+==================================================
+5. CUSTOM LIQUID FLOW
+==================================================
+
+Update the existing:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+Do not create a second frontend.
+
+The frontend must perform this sequence:
+
+A. Detect current Shopify product.
+
+B. Call:
+
+POST /api/storefront/connect
+
+C. Wait for successful connection response.
+
+D. Call:
+
+GET /api/storefront/model
+
+E. If available=true:
+   show View in Your Room button.
+
+F. If available=false:
+   keep button hidden.
+
+The connection call must happen automatically when the product page loads.
+
+Do NOT require the merchant to manually enter a product ID.
+
+Do NOT require the customer to enter anything.
+
+==================================================
+6. FRONTEND CONNECTION STATUS
+==================================================
+
+The frontend should NOT show a visible "Connected" message to normal customers unless useful.
+
+However, add a small optional diagnostic mode controlled by:
+
+?view_ar_debug=1
+
+When this parameter is present, show a small debug panel containing:
+
+Store:
+infinihomes.shop
+
+Backend:
+Online / Offline
+
+Product:
+Connected / Failed
+
+Eligibility:
+Furniture / Mattress / Not Eligible
+
+Model:
+Published / Not Available
+
+Frontend:
+Connected
+
+Last API response:
+success/error
+
+Do not show this diagnostic panel during normal customer browsing.
+
+Do not expose secrets.
+
+==================================================
+7. ADMIN DASHBOARD CONNECTION STATUS
+==================================================
+
+Add a section inside:
+
+Admin Dashboard → Settings
+
+called:
+
+"Storefront Connection"
+
+It should show:
+
+Storefront:
+INFini Homes
+
+Domain:
+infinihomes.shop
+
+Backend:
+Online / Offline
+
+Last Storefront Connection:
+timestamp
+
+Last Product Received:
+timestamp
+
+Connected Products:
+number
+
+Eligible Products:
+number
+
+Published Models:
+number
+
+Frontend:
+Connected / Waiting for storefront
+
+Meshy:
+Mock / Live Disabled
+
+IMPORTANT:
+"Frontend Connected" should mean that the Custom Liquid frontend has actually contacted the backend recently.
+
+Do NOT claim Shopify Admin OAuth is connected if it is not.
+
+Keep the existing Shopify OAuth status separately.
+
+For example:
+
+Shopify Admin API:
+Not Connected
+
+Storefront:
+Connected
+
+This distinction is important.
+
+==================================================
+8. HEARTBEAT / LAST SEEN
+==================================================
+
+When the Custom Liquid frontend connects successfully, update a lightweight storefront connection record or existing settings/log structure.
+
+Store:
+
+- shop
+- lastSeenAt
+- lastProductHandle
+- lastProductId
+- lastProductConnectionStatus
+
+Do NOT create a complicated tracking system.
+
+If a database schema change is absolutely necessary, first report it before applying it.
+
+Prefer existing app_settings/log structures if appropriate.
+
+==================================================
+9. SECURITY
+==================================================
+
+This is a public storefront endpoint.
+
+Therefore:
+
+- strict shop allowlist
+- strict input validation
+- rate limiting
+- CORS restricted to:
+  https://infinihomes.shop
+  https://www.infinihomes.shop
+
+Never expose:
+- SHOPIFY_API_SECRET
+- SHOPIFY_ACCESS_TOKEN
+- MESHY_API_KEY
+- DATABASE_URL
+- SESSION_SECRET
+
+Do not allow arbitrary URL fetching.
+
+Only accept Shopify CDN image URLs.
+
+==================================================
+10. IMPORTANT MODEL WORKFLOW
+==================================================
+
+Connecting a Shopify product does NOT mean generating a model.
+
+The workflow remains:
+
+Shopify product
+→ connected to Replit
+→ eligible
+→ model can be manually generated later
+→ REVIEW
+→ APPROVED
+→ PUBLISHED
+→ View in Your Room appears
+
+Real Meshy generation remains BLOCKED.
+
+Do NOT generate automatically.
+
+==================================================
+11. FURNITURE / MATTRESS ONLY
+==================================================
+
+The button must appear only for:
+
+Furniture products with a PUBLISHED model.
+
+Mattress products with a PUBLISHED model.
+
+It must NOT appear for:
+
+Bedsheets
+Bedding
+Curtains
+Lamps
+Decor
+Accessories
+etc.
+
+Do not weaken the existing eligibility logic.
+
+==================================================
+12. FRONTEND UX
+==================================================
+
+The frontend must not show an empty/broken button.
+
+Normal customer flow:
+
+No published model:
+→ no button.
+
+Published model:
+→ View in Your Room button.
+
+Click:
+→ professional modal.
+
+3D:
+→ GLB viewer.
+
+Android supported:
+→ AR.
+
+iOS:
+→ only offer AR if a real USDZ exists.
+
+Desktop:
+→ QR code.
+
+Mobile:
+→ appropriate mobile experience.
+
+No secrets.
+
+No product/theme modifications.
+
+==================================================
+13. TESTING
+==================================================
+
+After implementation, test using an actual Shopify product page if possible.
+
+Test:
+
+1. Furniture product.
+2. Mattress product.
+3. Bedsheet product.
+4. Lamp product.
+5. Product without published model.
+6. Product with published model.
+7. Product connection.
+8. Backend offline.
+9. Invalid shop.
+10. Invalid handle.
+11. Invalid image URL.
+12. Duplicate product connection.
+13. Existing product update.
+14. Existing product image unchanged.
+15. View in Your Room button.
+16. Viewer.
+17. QR.
+18. ?view_ar=1.
+19. Debug mode.
+20. Admin Storefront Connection status.
+21. Existing admin dashboard.
+22. Existing Shopify status.
+23. Meshy remains disabled.
+
+Clearly distinguish:
+- browser tested
+- API tested
+- code reviewed
+
+Do not claim browser testing if it wasn't possible.
+
+==================================================
+14. DO NOT BREAK THE CURRENT APP
+==================================================
+
+Before implementation inspect the current code.
+
+Make the minimum changes necessary.
+
+Do not rewrite the entire Custom Liquid file unless required.
+
+Do not rewrite the entire backend.
+
+Do not change unrelated settings.
+
+Do not modify Shopify OAuth.
+
+Do not modify Meshy.
+
+==================================================
+FINAL REPORT
+==================================================
+
+Report:
+
+A. Exact files changed
+B. Exact files created
+C. Database changes, if any
+D. New endpoints
+E. Custom Liquid changes
+F. Storefront connection behavior
+G. Admin status behavior
+H. Furniture test result
+I. Mattress test result
+J. Bedsheet test result
+K. Published model test result
+L. Meshy confirmation
+M. Shopify OAuth confirmation
+N. Any remaining limitations
+
+Do not say "fully complete" if any required test could not be performed.
+
+STOP after implementation and testing.

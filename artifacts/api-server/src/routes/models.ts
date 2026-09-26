@@ -7,6 +7,7 @@ import {
   generationJobsTable,
   logEntriesTable,
 } from "@workspace/db";
+import { computeImageSetHash } from "../lib/storefront-service";
 import {
   ListModelsResponse,
   GetModelParams,
@@ -135,6 +136,11 @@ router.post("/models/:id/generate", async (req, res): Promise<void> => {
         fileSizeBytes: result.fileSizeBytes,
         providerTaskId: result.providerTaskId,
         sourceImageCount: product.imageUrls.length,
+        // Records which exact set of Shopify images this model was
+        // generated from, so the storefront connect flow can later detect
+        // that the product's photos changed and this model needs a fresh
+        // look, without ever regenerating automatically.
+        imageSetHash: computeImageSetHash(product.imageUrls),
       })
       .where(eq(productModelsTable.id, model.id))
       .returning();
