@@ -1,0 +1,292 @@
+The goal is NOT merely to make the "View in Your Room" button clickable.
+
+I want the COMPLETE storefront frontend to work properly and reliably from start to finish, with no obvious glitches, broken states, console errors, duplicate UI, or dead buttons.
+
+IMPORTANT:
+First inspect the current implementation and reproduce/test the real behavior.
+Do NOT blindly rewrite the frontend.
+Do NOT make unrelated architectural changes.
+
+Do NOT:
+- call Meshy
+- generate any real 3D model
+- spend Meshy credits
+- change Shopify OAuth
+- change Shopify scopes
+- change Shopify distribution
+- change Shopify credentials
+- change Shopify products/images
+- change database schema
+- change the existing generation workflow
+- modify /api/ar/:token unless an actual frontend integration issue proves it is necessary
+- modify /api/storefront/model unless an actual frontend/API issue proves it is necessary
+
+==================================================
+FRONTEND MUST WORK END-TO-END
+==================================================
+
+The final Custom Liquid frontend must reliably support:
+
+1. Product page loads.
+2. Frontend initializes exactly once.
+3. Current Shopify product is detected correctly.
+4. Backend availability check works.
+5. Button appears ONLY when a published model is available.
+6. Button is clickable.
+7. Clicking button opens the viewer/modal.
+8. Modal is visible and correctly positioned.
+9. Modal can be closed.
+10. GLB model loads correctly.
+11. Model loading state is shown.
+12. Model loading failure is handled gracefully.
+13. Rotate works.
+14. Zoom works.
+15. Camera controls work.
+16. Fullscreen works where supported.
+17. AR button works where the device/browser supports it.
+18. Unsupported AR is handled cleanly.
+19. Desktop QR code appears.
+20. QR code points to the correct Shopify product URL.
+21. Mobile layout is correct.
+22. Modal works on small screens.
+23. ?view_ar=1 works correctly.
+24. Browser back/close behavior does not break the page.
+25. Existing Shopify product gallery remains unchanged.
+26. Existing product images remain unchanged.
+27. Price remains unchanged.
+28. Variants remain unchanged.
+29. Add to Cart remains unchanged.
+30. Theme scrolling remains functional.
+31. Page scrolling remains functional after closing the modal.
+32. No body-scroll-lock bug remains after closing.
+33. No horizontal overflow is introduced.
+34. No duplicate button appears.
+35. No duplicate modal appears.
+36. No duplicate model-viewer library initialization occurs.
+37. No duplicate event listeners are created.
+38. No console errors are produced by our frontend.
+39. Backend/API failures show a graceful UI state.
+40. Slow API/model loading shows a proper loading state.
+41. Network failure does not leave a permanently disabled/broken UI.
+42. Rapid repeated clicks do not create multiple modals/viewers.
+43. Clicking outside the modal behaves consistently.
+44. ESC closes the modal on desktop.
+45. Close button works on mobile.
+46. Touch interaction does not conflict with page scrolling.
+47. The frontend remains isolated from the Shopify theme CSS/JS as much as reasonably possible.
+
+==================================================
+IMPORTANT UI BEHAVIOR
+==================================================
+
+The button must not appear merely because the product is Furniture/Mattress.
+
+It should appear only when:
+
+backend available === true
+
+Therefore:
+
+Eligible + no published model
+→ no button.
+
+Eligible + published model
+→ button.
+
+Non-eligible product
+→ no button.
+
+==================================================
+MODEL VIEWER
+==================================================
+
+Use the existing model-viewer implementation.
+
+Do not invent fake model URLs.
+
+Use the backend's published:
+
+modelUrl
+
+Only show the viewer when the model URL is valid.
+
+If the model fails to load:
+- show a clear error
+- provide Close
+- restore page interaction
+- do not leave an invisible overlay behind
+
+==================================================
+AR
+==================================================
+
+Do not fake iOS AR.
+
+Current system has no real USDZ pipeline.
+
+Therefore:
+
+Android supported AR:
+→ use supported model-viewer AR path.
+
+iOS without USDZ:
+→ keep 3D viewer functional
+→ do not show a broken AR button.
+
+Do not create fake USDZ URLs.
+
+==================================================
+DESKTOP QR
+==================================================
+
+Desktop modal should provide QR for:
+
+https://infinihomes.shop/products/{product-handle}?view_ar=1
+
+The QR must:
+- be readable
+- point to the current product
+- contain no secret
+- not expose backend credentials
+
+If QR library fails:
+- show a graceful fallback message
+- viewer itself must continue working
+
+==================================================
+MOBILE
+==================================================
+
+Test the frontend at approximately:
+
+320px
+375px
+390px
+414px
+768px
+1024px
+1440px
+
+The UI must not:
+- overflow horizontally
+- cover the entire page incorrectly
+- make the product page unscrollable after closing
+- create fixed overlays after modal close
+
+==================================================
+SHOPIFY THEME SAFETY
+==================================================
+
+The frontend must use a unique namespace.
+
+Do NOT globally style:
+
+body
+html
+button
+img
+h1
+a
+input
+
+Do not modify theme-level JavaScript.
+
+Do not modify the product gallery.
+
+Do not modify Add to Cart.
+
+Do not modify variant selectors.
+
+==================================================
+CLICK BUG
+==================================================
+
+The current real issue is:
+
+The "View in Your Room" button renders visibly, but clicking it currently does nothing.
+
+Find the exact root cause first.
+
+Check:
+- event listener
+- initialization
+- JavaScript errors
+- DOM timing
+- model-viewer loading
+- API request
+- API response
+- modal creation
+- modal CSS
+- pointer-events
+- z-index
+- Shopify theme interference
+
+Do not assume the cause.
+
+==================================================
+TESTING REQUIREMENT
+==================================================
+
+After identifying the cause, make ONLY the minimum necessary fixes.
+
+Then perform a full regression test of the frontend.
+
+Test both:
+
+A. Published model product
+B. Product without published model
+
+Also test:
+- desktop
+- mobile-size viewport
+- slow network/API failure
+- invalid backend response
+- model loading failure
+- repeated clicks
+- close/reopen
+- ESC
+- ?view_ar=1
+- page scroll before/after modal
+- QR generation
+- console errors
+
+Use actual browser/runtime testing wherever possible, not only code review.
+
+If a real Shopify browser environment is unavailable, clearly distinguish:
+- runtime-tested
+- API-tested
+- code-reviewed
+
+Do NOT claim browser testing was completed if it was not.
+
+==================================================
+NO MESHY
+==================================================
+
+Absolutely no Meshy generation.
+
+Confirm:
+MESHY_API_KEY remains unset.
+No Meshy request was made.
+No Meshy credits were consumed.
+
+==================================================
+FINAL REPORT
+==================================================
+
+Report:
+
+1. Exact root cause of current click problem.
+2. Exact files changed.
+3. Exact changes made.
+4. Full frontend tests performed.
+5. Tests passed.
+6. Tests that could not be performed.
+7. Any remaining limitations.
+8. Confirmation that existing Shopify product data/images were untouched.
+9. Confirmation that Shopify OAuth/configuration was untouched.
+10. Confirmation that Meshy was not called.
+
+Do not say "fully working" unless the evidence supports it.
+
+STOP after the fix and full regression test.

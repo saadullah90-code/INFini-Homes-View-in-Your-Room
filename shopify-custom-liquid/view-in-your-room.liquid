@@ -88,6 +88,7 @@
   }
   .viyr-button:hover { background: #1f2937; }
   .viyr-button:active { transform: scale(0.98); }
+  .viyr-button[hidden] { display: none; }
   .viyr-button__icon { flex: none; }
 
   .viyr-modal {
@@ -186,7 +187,17 @@
   if (window.__viyrInitialized) return;
   window.__viyrInitialized = true;
 
-  const root = document.currentScript ? document.currentScript.closest(".viyr-root") : document.querySelector(".viyr-root[data-viyr-instance]");
+  // NOTE: the markup above closes </div> for .viyr-root before this <style>
+  // and <script> tag -- they are siblings of .viyr-root, not descendants of
+  // it. `document.currentScript.closest(".viyr-root")` can therefore never
+  // find it (closest() only walks the element itself and its ancestors, not
+  // siblings), and since document.currentScript is non-null for a normal
+  // inline script in every real browser, the old code's fallback branch
+  // never ran, silently aborting initialization below and leaving the click
+  // handler unattached. This file only ever supports a single instance per
+  // page (see the guard above), so looking it up directly is both correct
+  // and simpler.
+  const root = document.querySelector(".viyr-root[data-viyr-instance]");
   if (!root) return;
 
   const productHandle = root.dataset.productHandle;
@@ -210,6 +221,11 @@
   let modelData = null; // populated once the backend confirms a published model
   let modelViewerLoadPromise = null;
   let modelViewerEl = null;
+  // Set synchronously (before the first `await` in openModal) so a burst of
+  // rapid clicks -- which all run their synchronous prelude before any of
+  // them resumes after `await ensureModelViewer()` -- can't all see
+  // `modelViewerEl` as still null and each build their own <model-viewer>.
+  let modelViewerBuildStarted = false;
 
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
@@ -359,13 +375,15 @@
     els.error.hidden = true;
     document.body.style.overflow = "hidden";
 
-    if (!modelViewerEl) {
+    if (!modelViewerEl && !modelViewerBuildStarted) {
+      modelViewerBuildStarted = true;
       try {
         await ensureModelViewer();
         modelViewerEl = buildModelViewer();
         els.viewerWrap.appendChild(modelViewerEl);
       } catch (err) {
         console.warn("[View in Your Room] model-viewer failed to load:", err);
+        modelViewerBuildStarted = false; // allow a retry on the next open
         onViewerError();
         return;
       }
