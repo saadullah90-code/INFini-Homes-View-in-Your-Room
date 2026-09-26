@@ -247,6 +247,8 @@ function ArPreview() {
  const {token=''}=useParams<{token:string}>(),q=useGetArExperience(token,{query:{enabled:!!token,queryKey:getGetArExperienceQueryKey(token)}}); return <div className="ar-page"><div className="eyebrow">INFini Homes / View in your room</div>{q.isLoading?<Load/>:q.isError?<Failure error={q.error} retry={()=>q.refetch()}/>:q.data&&<><h1 className="page-title">{q.data.productTitle}</h1><p className="page-desc">Drag to rotate. Pinch or scroll to zoom. Use AR on a supported device.</p><div className="ar-frame"><ModelViewer url={q.data.modelUrl} poster={q.data.thumbnailUrl}/></div>{q.data.dimensions&&<p className="small">Dimensions: {q.data.dimensions.width??'—'} × {q.data.dimensions.height??'—'} × {q.data.dimensions.depth??'—'} {q.data.dimensions.unit}</p>}</>}</div>;
 }
 // Public demo is deliberately separate from all products and publish state.
+// Verified public deployment; never encode the authenticated workspace preview.
+const PUBLIC_DEMO_URL = "https://in-fini-homes-view-in-your-room.replit.app/demo-ar";
 function FreeArDemo() {
   const qrRoot = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
@@ -266,7 +268,7 @@ function FreeArDemo() {
       const QRCode = (window as Window & { QRCode?: new (element: HTMLElement, options: { text: string; width: number; height: number }) => void }).QRCode;
       if (!QRCode || !container.isConnected) { setError('QR library could not load. Open the mobile link instead.'); return; }
       container.replaceChildren();
-      new QRCode(container, { text: new URL('/demo-ar', location.origin).href, width: 180, height: 180 });
+      new QRCode(container, { text: PUBLIC_DEMO_URL, width: 180, height: 180 });
     };
     if ((window as Window & { QRCode?: unknown }).QRCode) { render(); return; }
     const script = document.createElement('script');
@@ -276,7 +278,7 @@ function FreeArDemo() {
     document.head.appendChild(script);
     return () => { script.onload = null; script.onerror = null; };
   }, []);
-  const link = new URL('/demo-ar', window.location.origin).href;
+  const link = PUBLIC_DEMO_URL;
   return <div className="ar-page" style={{maxWidth:880,margin:'auto',padding:24}}>
     <div className="eyebrow">FREE TEST / NOT A SHOPIFY PRODUCT</div>
     <h1 className="page-title">Desktop → phone → room AR demo</h1>
@@ -289,7 +291,7 @@ function FreeArDemo() {
       <div ref={qrRoot} style={{padding:12,background:'white'}} aria-label="QR code for this demo"/>
       {error && <p role="alert">{error}</p>}
       <a href={link} target="_blank" rel="noreferrer">{link}</a>
-      <p>Phone testing requires the public published site, not localhost or a private preview.</p>
+      <p>This QR opens the public published demo. No Replit account is required.</p>
     </div>}
     {isMobile && <p style={{marginTop:16}}>Tap the AR icon inside the viewer on a compatible phone. iPhone Quick Look conversion is device-dependent and has not yet been verified on a real iPhone.</p>}
     <p className="small" style={{marginTop:22}}>Sample model from <a href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a>. This demo cannot publish a product model.</p>
