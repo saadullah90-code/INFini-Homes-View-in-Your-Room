@@ -253,13 +253,16 @@ function FreeArDemo() {
   const qrRoot = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [webglAvailable, setWebglAvailable] = useState(false);
   useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
       setWebglAvailable(!!(canvas.getContext('webgl2') || canvas.getContext('webgl')));
     } catch { setWebglAvailable(false); }
-    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(ios);
+    const mobile = ios || /Android/i.test(navigator.userAgent);
     setIsMobile(mobile);
     if (mobile) return;
     const container = qrRoot.current;
@@ -283,8 +286,20 @@ function FreeArDemo() {
     <div className="eyebrow">FREE TEST / NOT A SHOPIFY PRODUCT</div>
     <h1 className="page-title">Desktop → phone → room AR demo</h1>
     <p className="page-desc">This is a sample astronaut, NOT your furniture or mattress. No Meshy credits are spent. Scan on a supported phone, then tap the viewer's AR icon and allow camera access.</p>
+    {isMobile && <div className="panel panel-pad" style={{marginBottom:20}}>
+      <strong>Apne room mein dekhein</strong>
+      <p>Tap below to launch your phone's AR viewer. On iPhone, select “AR” instead of “Object”, allow camera access if asked, then slowly move your phone towards the floor.</p>
+      {isIOS
+        ? <a rel="ar" href="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" className="btn btn-primary" style={{display:'inline-flex',gap:10,minHeight:52}} data-testid="launch-ios-ar">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='none' stroke='white' stroke-width='2' d='M16 3 3 10v13l13 7 13-7V10ZM3 10l13 7 13-7M16 17v13M16 3v14'/%3E%3C/svg%3E" alt="" style={{width:32,height:32,objectFit:'contain'}} />
+            Apne room mein dekhein — Open AR
+          </a>
+        : <a className="btn btn-primary" data-testid="launch-android-ar" href="intent://arvr.google.com/scene-viewer/1.0?file=https%3A%2F%2Fmodelviewer.dev%2Fshared-assets%2Fmodels%2FAstronaut.glb&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;S.browser_fallback_url=https%3A%2F%2Fin-fini-homes-view-in-your-room.replit.app%2Fdemo-ar%3Far_unavailable%3D1;end;">Apne room mein dekhein — Open AR</a>}
+      <p className="small">If AR does not open inside a QR scanner or another app, open this page in Safari (iPhone) or Chrome (Android). AR requires a supported device; camera cannot start automatically from a QR scan.</p>
+      {new URLSearchParams(window.location.search).has('ar_unavailable') && <p role="alert">AR could not launch on this device. Check Google Play Services for AR support; the 3D preview remains available below.</p>}
+    </div>}
     <div className="ar-frame">{webglAvailable
-      ? <ModelViewer url="https://modelviewer.dev/shared-assets/models/Astronaut.glb" poster="https://modelviewer.dev/shared-assets/models/Astronaut.webp"/>
+      ? <ModelViewer url="https://modelviewer.dev/shared-assets/models/Astronaut.glb"/>
       : <div className="viewer-empty"><strong>3D preview requires WebGL</strong><p>This browser or preview environment cannot create a 3D graphics context. Use a supported browser or scan from a supported phone.</p></div>}</div>
     {!isMobile && <div style={{marginTop:20,display:'grid',gap:12,justifyItems:'start'}}>
       <strong>Scan this QR to open the demo on your phone</strong>
@@ -293,7 +308,7 @@ function FreeArDemo() {
       <a href={link} target="_blank" rel="noreferrer">{link}</a>
       <p>This QR opens the public published demo. No Replit account is required.</p>
     </div>}
-    {isMobile && <p style={{marginTop:16}}>Tap the AR icon inside the viewer on a compatible phone. iPhone Quick Look conversion is device-dependent and has not yet been verified on a real iPhone.</p>}
+    {isMobile && <p style={{marginTop:16}}>The preview below the AR button is optional. iPhone uses a prepared USDZ sample, not an on-device conversion. Physical phone camera testing is still required.</p>}
     <p className="small" style={{marginTop:22}}>Sample model from <a href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a>. This demo cannot publish a product model.</p>
   </div>;
 }
