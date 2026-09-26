@@ -1,0 +1,4 @@
+- [Orval client dom.iterable](orval-client-dom-iterable.md) — generated API client tsconfig needs `"dom.iterable"` lib or `Headers.entries()` calls fail typecheck.
+- [Keyword eligibility matching](keyword-eligibility-matching.md) — substring keyword checks over-match (e.g. "bed" inside "Bedding"); use word-boundary regex instead.
+- [Shopify custom-app vs connector](shopify-custom-app-vs-connector.md) — Replit's Shopify connector is for Storefront-API buyer apps, not custom installable apps needing OAuth/Admin API/webhooks on an external store.
+- [Gating paid AI generation](gating-paid-ai-generation.md) — gate live/paid provider calls on a persisted DB setting, not env-var presence, so adding a key alone can't trigger real spend.

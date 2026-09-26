@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "INFini Homes 3D/AR Admin"
+description = "Merchant-facing admin app for the INFini Homes Shopify 'View in Your Room' 3D/AR project. Lets the merchant review which furniture and mattress products are eligible for 3D generation, manage the generation queue, review and approve/reject generated 3D models before they go live, publish approved models, monitor provider/connection status, and inspect the webhook/system event log. Also hosts a public /ar/:token route for testing the customer-facing 3D/AR viewer with sample models before any Shopify store or Meshy generation is connected."
+version = "1.0.0"
+id = "artifacts/admin-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22133
+
+[services.development]
+run = "pnpm --filter @workspace/admin-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/admin-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/admin-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22133"
+BASE_PATH = "/"

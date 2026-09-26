@@ -1,0 +1,1856 @@
+============================================================
+PROJECT: INFini Homes — Shopify "View in Your Room" 3D/AR APP
+============================================================
+
+You are an expert Shopify App Engineer, Full-Stack TypeScript Developer,
+3D/WebGL Engineer, AR Engineer, DevOps Engineer, and QA Engineer.
+
+I want you to build a production-ready Shopify app for my Shopify store:
+
+STORE:
+https://infinihomes.shop/
+
+REFERENCE UX:
+https://montedesign.com/products/cortina-glider-recliner
+
+The goal is to create a professional "View in Your Room" / "View in Your Space"
+3D + AR experience for eligible Shopify products.
+
+IMPORTANT:
+This is NOT a simple demo.
+Do NOT create fake/mock functionality and present it as working.
+Do NOT silently skip failed steps.
+Do NOT spend API credits unnecessarily.
+Do NOT generate real 3D models until I explicitly approve the first live generation.
+
+============================================================
+1. CORE CUSTOMER EXPERIENCE
+============================================================
+
+For eligible products, the customer should see:
+
+[ View in Your Room ]
+
+or
+
+[ View in Your Space ]
+
+on the Shopify product page.
+
+When clicked:
+
+DESKTOP:
+1. Open a professional 3D/AR experience.
+2. Show the 3D product preview.
+3. Show a QR code.
+4. Tell the customer to scan the QR code using their phone.
+5. QR code must open the SAME product's secure AR experience on mobile.
+6. Customer should not need to search for the product again.
+
+MOBILE:
+1. Open the product 3D viewer.
+2. Provide a "View in Your Room" / AR CTA.
+3. Launch supported browser/device AR.
+4. If AR is not supported, provide an interactive 3D viewer fallback.
+5. Never show a blank screen.
+
+The customer must never see:
+- Meshy API keys
+- Shopify access tokens
+- Railway credentials
+- database credentials
+- internal provider task IDs
+- admin secrets
+
+============================================================
+2. MOST IMPORTANT PRODUCT IMAGE RULE
+============================================================
+
+ABSOLUTELY DO NOT MODIFY EXISTING SHOPIFY PRODUCT IMAGES.
+
+The original product images are the source/reference material.
+
+The app must NEVER:
+- replace product images
+- resize/re-upload product images unnecessarily
+- delete product images
+- reorder product images
+- modify image URLs
+- modify product descriptions
+- modify product titles
+- modify prices
+- modify variants
+- modify inventory
+- modify collections
+
+The 3D model is a SEPARATE asset.
+
+Existing Shopify product images must remain exactly as they are.
+
+Before making any Shopify product media mutation, verify that it only affects
+the intended 3D model media and cannot overwrite existing images.
+
+============================================================
+3. PRODUCT ACCURACY REQUIREMENT
+============================================================
+
+The generated 3D model should visually match the actual product as closely
+as technically possible.
+
+This is extremely important for furniture and mattresses.
+
+The system must NOT intentionally redesign the product.
+
+Preserve whenever visible:
+- shape
+- proportions
+- dimensions
+- cushions
+- arms
+- legs
+- frame
+- stitching
+- seams
+- buttons
+- handles
+- headboards
+- mattress structure
+- fabric appearance
+- colors
+- materials
+- visible details
+
+IMPORTANT LIMITATION:
+
+A single 2D image cannot guarantee exact hidden/backside geometry.
+
+Therefore the system should support:
+
+1. Manufacturer-provided 3D/CAD model where available.
+2. Multi-image reconstruction where multiple product images exist.
+3. Single-image AI generation only when necessary.
+4. Manual dimension calibration.
+
+Never claim that an AI-generated model is mathematically identical to a
+physical product when the source data cannot guarantee that.
+
+============================================================
+4. ONLY THESE PRODUCT CATEGORIES
+============================================================
+
+The app must process ONLY:
+
+- Furniture
+- Mattresses
+
+No other product category should automatically enter the 3D generation queue.
+
+Do NOT generate models for:
+- decor
+- lighting
+- accessories
+- electronics
+- clothing
+- kitchen products
+- unrelated products
+- any other categories
+
+Use Shopify product taxonomy/category data where available.
+
+Also implement configurable category/keyword matching as a fallback.
+
+Create an eligibility function such as:
+
+isEligibleProduct(product)
+
+It should return TRUE only when the product belongs to Furniture or Mattresses.
+
+The admin should be able to see why a product was considered eligible/ineligible.
+
+============================================================
+5. VERY IMPORTANT: DO NOT BULK GENERATE IMMEDIATELY
+============================================================
+
+NEVER automatically generate 3D models for all eligible products after installation.
+
+The workflow must be:
+
+PENDING
+→ ELIGIBLE
+→ QUEUED
+→ PROCESSING
+→ GENERATED
+→ OPTIMIZING
+→ DIMENSION CALIBRATION
+→ REVIEW
+→ APPROVED
+→ PUBLISHED
+
+Failed jobs:
+
+PROCESSING
+→ FAILED
+
+A failed job must show the actual error.
+
+Do not endlessly retry.
+
+Use controlled retry with exponential backoff.
+
+Do not create duplicate jobs.
+
+Do not generate an approved model again unless the admin explicitly requests
+regeneration.
+
+============================================================
+6. MESHY INTEGRATION
+============================================================
+
+Use Meshy as an external 3D generation provider.
+
+Meshy documentation:
+https://docs.meshy.ai/en/api/
+
+Image-to-3D:
+https://docs.meshy.ai/en/api/image-to-3d
+
+Multi-Image-to-3D:
+https://docs.meshy.ai/en/api/multi-image-to-3d
+
+The system should use Meshy API from the SERVER only.
+
+Never expose MESHY_API_KEY in browser/client code.
+
+Environment variable:
+
+MESHY_API_KEY=
+
+The backend should:
+
+1. Retrieve selected Shopify product images.
+2. Select suitable reference images.
+3. Prefer multiple angles when available.
+4. Send images to Meshy.
+5. Track provider task ID.
+6. Poll task status safely.
+7. Download generated GLB.
+8. Validate GLB.
+9. Optimize GLB.
+10. Calibrate dimensions.
+11. Save model asset.
+12. Send to admin review.
+13. Publish only after approval.
+
+============================================================
+7. MESHY CREDIT PROTECTION
+============================================================
+
+THIS IS CRITICAL.
+
+Do NOT spend Meshy credits during development unless I explicitly approve it.
+
+During development:
+- use mock provider responses where appropriate
+- test API authentication without starting expensive generation
+- use local/sample GLB files
+- use existing public/sample 3D assets only for viewer testing
+- test the queue without consuming generation credits
+
+The first real generation must happen ONLY after I explicitly say:
+
+"APPROVE FIRST LIVE GENERATION"
+
+Before the first live generation:
+- show which Shopify product will be used
+- show which images will be sent
+- show estimated provider credits if available
+- show provider/model being used
+- ask for confirmation
+
+Never silently start a real generation.
+
+============================================================
+8. FIRST LIVE TEST PRODUCT
+============================================================
+
+Do NOT choose a random product automatically.
+
+Create an admin screen where I can select exactly ONE eligible Shopify product
+for the first live generation.
+
+Show:
+
+Product title
+Product ID
+Product category
+Product images
+Product dimensions if available
+Number of reference images
+Generation provider
+Generation model
+Estimated credits
+Generation status
+
+Then require explicit confirmation.
+
+============================================================
+9. MULTI-IMAGE SUPPORT
+============================================================
+
+If a product has multiple useful images, use them intelligently.
+
+Prefer:
+- front
+- side
+- back
+- 3/4 angle
+- detail images
+
+Do not send irrelevant lifestyle images if they can confuse the 3D model.
+
+Create an image selection mechanism.
+
+For each generation, store:
+- image URLs
+- image IDs if available
+- image hash
+- generation timestamp
+
+============================================================
+10. IMAGE CHANGE PROTECTION
+============================================================
+
+Do NOT automatically regenerate a 3D model whenever a product image changes.
+
+Instead:
+
+1. Detect product/image changes using Shopify webhooks.
+2. Recalculate an image_set_hash.
+3. Compare it with the hash used for the approved model.
+4. If changed:
+   mark model as STALE or NEEDS_REVIEW.
+5. Do NOT automatically spend Meshy credits.
+6. Let admin decide whether to regenerate.
+
+This prevents unexpected API charges.
+
+============================================================
+11. DIMENSIONS AND REAL-WORLD SCALE
+============================================================
+
+AR scale is extremely important.
+
+The system should retrieve product dimensions from Shopify where possible.
+
+Support:
+- width
+- height
+- depth
+- length
+- mattress dimensions
+- unit conversion
+
+Support:
+- mm
+- cm
+- m
+- inch
+- ft
+
+If dimensions are unavailable:
+
+Do NOT pretend that the scale is accurate.
+
+Show:
+
+"Dimensions required for accurate AR scale."
+
+Allow admin to manually enter dimensions.
+
+Important:
+
+Correct SCALE does not guarantee correct SHAPE.
+
+Both must be handled separately.
+
+Store dimension calibration information with the model.
+
+============================================================
+12. VARIANTS
+============================================================
+
+Products may have variants.
+
+Determine whether variants:
+A. only change color/material
+B. change actual geometry/dimensions
+
+If only color/material changes:
+- reuse geometry where practical
+- support material/texture variation where technically safe
+
+If geometry/dimensions change:
+- support separate model configuration/assets.
+
+Do not assume all variants share the same physical geometry.
+
+============================================================
+13. GLB OPTIMIZATION
+============================================================
+
+Do NOT buy a paid GLB optimization service initially.
+
+Use open-source/local server-side tools where practical.
+
+The optimization pipeline should include:
+
+1. GLB validation
+2. Remove unnecessary data
+3. Optimize geometry where safe
+4. Optimize textures
+5. Reduce excessive polygon count when appropriate
+6. Preserve material appearance
+7. Preserve dimensions
+8. Preserve UVs
+9. Preserve important details
+10. Produce web-friendly GLB
+
+Do NOT aggressively reduce quality.
+
+Furniture needs good visual quality.
+
+Create at least a balanced optimization preset.
+
+Do not optimize the model in a way that visibly changes the product.
+
+Store:
+- original GLB
+- optimized GLB
+- file size
+- polygon/mesh information if available
+- optimization status
+
+============================================================
+14. 3D VIEWER
+============================================================
+
+Use a reliable open-source web 3D viewer.
+
+Preferred:
+Google <model-viewer>
+
+https://modelviewer.dev/
+
+Requirements:
+
+- rotate
+- zoom
+- pan where supported
+- responsive
+- mobile friendly
+- lazy load
+- no unnecessary huge JS libraries
+- no horizontal scrolling
+- loading state
+- error state
+- fallback image
+
+Do not load the entire 3D engine globally on every Shopify page.
+
+Only load required assets when the app block/experience is used.
+
+============================================================
+15. AR SUPPORT
+============================================================
+
+Support browser/device AR where supported.
+
+The implementation should use standards-supported AR capabilities such as
+model-viewer and platform-supported mechanisms.
+
+Mobile flow:
+
+Product Page
+→ View in Your Room
+→ 3D Viewer
+→ View in Your Room
+→ AR
+
+If AR is unsupported:
+
+3D viewer remains available.
+
+Do NOT make AR availability assumptions based only on user agent.
+
+Feature-detect where possible.
+
+============================================================
+16. DESKTOP QR CODE FLOW
+============================================================
+
+Desktop customer:
+
+Product Page
+→ View in Your Room
+→ 3D/AR modal
+→ QR Code
+→ Scan with phone
+→ Same product AR experience
+
+The QR URL must contain a secure product/model reference.
+
+Do NOT expose sensitive IDs or credentials.
+
+Use short-lived signed tokens where appropriate.
+
+QR code should:
+- be high quality
+- be scannable
+- have sufficient contrast
+- have a clear instruction
+- open the same product
+- work without requiring the customer to manually search
+
+Example text:
+
+"Scan with your phone to view this product in your room."
+
+============================================================
+17. SECURE AR ROUTE
+============================================================
+
+Create a public customer-facing route for AR.
+
+Example conceptual route:
+
+/ar/:token
+
+The token must be:
+- signed
+- tamper-resistant
+- scoped to the specific product/model
+- optionally short-lived
+- non-sensitive
+
+Do not put Shopify access tokens or API keys in the URL.
+
+Validate token server-side.
+
+If invalid/expired:
+show a friendly error.
+
+============================================================
+18. SHOPIFY THEME APP EXTENSION
+============================================================
+
+This MUST be implemented as a Shopify Theme App Extension / App Block.
+
+Documentation:
+
+https://shopify.dev/docs/apps/build/online-store/theme-app-extensions
+
+App Blocks:
+https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks
+
+The merchant should be able to go to:
+
+Shopify Admin
+→ Online Store
+→ Themes
+→ Customize
+→ Product Template
+→ Add Block
+→ Apps
+→ View in Your Room
+
+Do NOT require the merchant to manually paste a huge Liquid code snippet.
+
+The app block should:
+- identify current product
+- check eligibility
+- check whether approved model exists
+- show button only when appropriate
+- initialize only once
+- avoid duplicate buttons
+- not break theme scrolling
+- not break theme layout
+- work on desktop
+- work on mobile
+
+============================================================
+19. STOREFRONT BUTTON
+============================================================
+
+Default:
+
+View in Your Room
+
+Allow admin customization:
+
+- button text
+- button style
+- icon on/off
+- border radius
+- spacing
+- alignment
+
+But keep implementation lightweight.
+
+Do not duplicate button if the product section re-renders.
+
+Handle Shopify theme section reloads correctly.
+
+============================================================
+20. BUTTON VISIBILITY LOGIC
+============================================================
+
+Button should NOT appear when:
+
+- product is not Furniture/Mattress
+- no approved model exists
+- model is failed
+- model is still processing
+- app is disabled
+
+Button SHOULD appear when:
+
+- product is eligible
+- approved model exists
+- model is available
+
+Optional admin setting:
+
+"Show button before model is published"
+
+Default: OFF.
+
+============================================================
+21. SHOPIFY ADMIN APP
+============================================================
+
+Build an admin dashboard.
+
+It should include:
+
+Dashboard
+Products
+3D Models
+Generation Queue
+Reviews
+Settings
+API Status
+Logs
+
+============================================================
+22. ADMIN DASHBOARD
+============================================================
+
+Dashboard should show:
+
+Eligible products
+Models generated
+Models pending review
+Models published
+Models failed
+Models stale
+Jobs processing
+
+Also show:
+
+Provider status
+Shopify connection status
+Database status
+Storage status
+
+Do not fake status values.
+
+============================================================
+23. PRODUCT LIST
+============================================================
+
+Show:
+
+Product image
+Product title
+Shopify product ID
+Category
+Eligibility
+Model status
+AR status
+Last updated
+Actions
+
+Actions:
+
+Generate
+Preview
+Approve
+Reject
+Regenerate
+Publish
+Unpublish
+Mark stale
+
+Do not show Generate for ineligible products.
+
+============================================================
+24. MODEL REVIEW SCREEN
+============================================================
+
+Before publication, admin should see:
+
+Original Shopify images
+
+alongside:
+
+Generated 3D model
+
+Allow interactive model preview.
+
+Show:
+- product title
+- dimensions
+- model status
+- provider
+- generation date
+- source image count
+- file size
+- optimization status
+
+Buttons:
+
+APPROVE
+REJECT
+REGENERATE
+
+Only APPROVED models can become customer-facing.
+
+============================================================
+25. APPROVAL WORKFLOW
+============================================================
+
+Generated model:
+
+GENERATED
+→ OPTIMIZING
+→ REVIEW
+
+Admin:
+
+APPROVE
+or
+REJECT
+
+If APPROVED:
+
+APPROVED
+→ PUBLISHED
+
+If REJECTED:
+
+REJECTED
+→ optionally REGENERATE
+
+Store:
+- reviewer
+- review timestamp
+- rejection reason
+- approval timestamp
+
+============================================================
+26. BULK GENERATION
+============================================================
+
+After successful first test:
+
+Allow bulk generation.
+
+But it must be controlled.
+
+Admin selects:
+
+5 products
+10 products
+25 products
+50 products
+etc.
+
+Before starting:
+
+Show:
+- selected products
+- estimated credits if available
+- current provider
+- current model
+- warning
+
+Require explicit confirmation.
+
+Use queue processing.
+
+Never run unlimited concurrent generations.
+
+Use configurable concurrency.
+
+Example:
+
+MAX_CONCURRENT_GENERATIONS=2
+
+Do not hard-code unnecessarily.
+
+============================================================
+27. QUEUE SYSTEM
+============================================================
+
+Create reliable job processing.
+
+Job statuses:
+
+PENDING
+PROCESSING
+GENERATED
+OPTIMIZING
+REVIEW
+APPROVED
+PUBLISHED
+FAILED
+CANCELLED
+STALE
+
+Requirements:
+
+- retry failed network requests
+- exponential backoff
+- provider polling interval
+- max retries
+- timeout
+- duplicate prevention
+- idempotency
+- persistent job state
+
+If server restarts, jobs must not disappear.
+
+============================================================
+28. SHOPIFY API
+============================================================
+
+Use Shopify Admin GraphQL API.
+
+Documentation:
+
+https://shopify.dev/docs/api/admin-graphql
+
+Do NOT build new functionality around deprecated REST Admin API workflows.
+
+Potential required scopes should be kept to minimum necessary.
+
+Likely scopes may include:
+
+read_products
+write_products
+read_files
+write_files
+
+BUT:
+
+Only request scopes actually required by the implementation.
+
+Do not request unnecessary permissions.
+
+Use Shopify's current API version available during development.
+
+Keep API version configurable.
+
+============================================================
+29. PRODUCT MEDIA
+============================================================
+
+If publishing 3D models into Shopify product media, use the appropriate
+current Shopify GraphQL product media APIs.
+
+Reference:
+
+https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreateMedia
+
+CRITICAL:
+
+Do not overwrite existing images.
+
+3D media must be added as additional media where supported.
+
+If Shopify's current media implementation has limitations, document them and
+use a safe alternative storage/CDN architecture.
+
+============================================================
+30. STORAGE
+============================================================
+
+Do not store large GLB binaries inside PostgreSQL.
+
+Database should store metadata and URLs/references.
+
+Possible asset storage:
+- Shopify-hosted media where appropriate
+- object storage/CDN
+- Railway-compatible external storage
+
+The architecture must keep storage replaceable.
+
+Store:
+
+original_model_url
+optimized_model_url
+thumbnail_url
+file_size
+mime_type
+checksum
+created_at
+
+============================================================
+31. DATABASE
+============================================================
+
+Use PostgreSQL.
+
+Suggested tables:
+
+shops
+products
+product_models
+model_assets
+model_generation_jobs
+model_reviews
+product_dimensions
+app_settings
+webhook_events
+
+Suggested product_models fields:
+
+id
+shop_id
+shopify_product_id
+shopify_product_gid
+product_handle
+category
+status
+provider
+provider_task_id
+original_model_url
+optimized_model_url
+image_set_hash
+model_hash
+approved_at
+published_at
+created_at
+updated_at
+
+Use proper indexes.
+
+Use foreign keys.
+
+Do not store secrets unnecessarily.
+
+============================================================
+32. SHOPIFY WEBHOOKS
+============================================================
+
+Implement appropriate webhooks.
+
+At minimum:
+
+PRODUCTS_UPDATE
+PRODUCTS_DELETE
+APP_UNINSTALLED
+
+Also handle relevant product/media changes where supported.
+
+When product images change:
+
+DO NOT automatically regenerate.
+
+Mark model stale/needs review.
+
+When product is deleted:
+
+clean up associated app data safely.
+
+When app is uninstalled:
+
+handle shop cleanup according to Shopify requirements.
+
+Validate webhook authenticity.
+
+============================================================
+33. APP AUTHENTICATION
+============================================================
+
+Implement secure Shopify OAuth/app installation flow according to current
+Shopify requirements.
+
+Never expose offline access tokens to frontend.
+
+Store credentials securely.
+
+Use environment variables/secrets.
+
+============================================================
+34. ENVIRONMENT VARIABLES
+============================================================
+
+Create:
+
+.env.example
+
+Potential variables:
+
+SHOPIFY_API_KEY=
+SHOPIFY_API_SECRET=
+SHOPIFY_APP_URL=
+SHOPIFY_SCOPES=
+SHOPIFY_API_VERSION=
+
+DATABASE_URL=
+
+MESHY_API_KEY=
+
+STORAGE_BUCKET=
+STORAGE_ENDPOINT=
+STORAGE_ACCESS_KEY=
+STORAGE_SECRET_KEY=
+
+SESSION_SECRET=
+
+APP_ENV=
+
+Do not put actual secrets in Git.
+
+Do not commit .env.
+
+============================================================
+35. REPLIT DEVELOPMENT
+============================================================
+
+This project will initially be developed in Replit.
+
+Optimize development to minimize Replit credit usage.
+
+Do not repeatedly rebuild/install dependencies unnecessarily.
+
+Do not run expensive generation jobs automatically.
+
+Use local/mock test data where possible.
+
+Separate development and production configuration.
+
+Replit is DEVELOPMENT environment.
+
+Production should NOT depend on Replit.
+
+============================================================
+36. GITHUB
+============================================================
+
+Structure the project so it can be pushed to GitHub.
+
+Include:
+
+README.md
+SETUP.md
+DEPLOYMENT.md
+API_SETUP.md
+.env.example
+
+Do not commit:
+
+.env
+API keys
+tokens
+passwords
+database credentials
+
+============================================================
+37. RAILWAY PRODUCTION
+============================================================
+
+Production should be deployable to Railway.
+
+Railway documentation:
+
+https://docs.railway.com/
+
+Architecture should support:
+
+GitHub
+→ Railway
+→ PostgreSQL
+→ production app
+
+Replit should not be required for the live customer experience.
+
+Create deployment instructions.
+
+Include:
+- environment variables
+- build command
+- start command
+- database setup
+- migrations
+- Shopify app URL configuration
+- webhook URLs
+- callback URLs
+- theme extension deployment
+
+============================================================
+38. BACKEND ARCHITECTURE
+============================================================
+
+Use clean modular architecture.
+
+Suggested services:
+
+ShopifyService
+MeshyService
+ProductService
+ModelService
+GenerationQueueService
+OptimizationService
+DimensionService
+StorageService
+QRService
+ARService
+WebhookService
+
+Do not put everything into one huge file.
+
+Use TypeScript.
+
+Use clear types/interfaces.
+
+Handle errors centrally.
+
+============================================================
+39. API DESIGN
+============================================================
+
+Create secure backend routes for:
+
+Shopify authentication
+Products
+Eligible products
+Models
+Generation jobs
+Reviews
+Publish/unpublish
+AR token
+QR generation
+Settings
+Health checks
+
+Protect admin routes.
+
+Public AR routes should expose only the minimum required data.
+
+============================================================
+40. SECURITY
+============================================================
+
+Implement:
+
+- server-side secrets
+- input validation
+- authentication
+- authorization
+- webhook verification
+- signed AR tokens
+- rate limiting
+- file type validation
+- file size limits
+- safe external URL handling
+- SSRF protection where applicable
+- secure headers
+- no secret leakage
+- sanitized logs
+
+Never print API keys in logs.
+
+Never send Meshy API key to browser.
+
+============================================================
+41. PERFORMANCE
+============================================================
+
+The Shopify storefront must remain fast.
+
+Do NOT:
+- load 3D libraries on every page unnecessarily
+- load models before user interaction
+- block product page rendering
+- download huge models immediately
+
+Use:
+- lazy loading
+- code splitting
+- compression
+- optimized GLB
+- CDN
+- caching
+- async loading
+
+The normal product page should work normally even if the 3D app fails.
+
+============================================================
+42. MOBILE RESPONSIVENESS
+============================================================
+
+This is critical.
+
+Test:
+
+320px
+375px
+390px
+414px
+768px
+1024px
+1366px
+1920px
+
+No:
+- horizontal scrolling
+- clipped modal
+- oversized QR
+- broken buttons
+- overlapping UI
+- inaccessible close button
+
+Desktop and mobile layouts can be different.
+
+============================================================
+43. ERROR HANDLING
+============================================================
+
+Never show a blank page.
+
+Examples:
+
+Model loading:
+"Loading 3D model..."
+
+Model unavailable:
+"3D preview is currently unavailable."
+
+AR unsupported:
+"AR isn't supported on this device. You can still view the product in 3D."
+
+Invalid QR:
+"This AR session is no longer available."
+
+Generation failure:
+"3D model generation failed."
+
+Admin should see technical error details.
+
+Customer should see friendly messages.
+
+============================================================
+44. FALLBACK BEHAVIOR
+============================================================
+
+If the 3D model cannot load:
+
+Show original Shopify product image.
+
+Do not modify the image.
+
+If AR is unavailable:
+
+Show 3D viewer.
+
+If 3D viewer is unavailable:
+
+Show original product image.
+
+Never leave customer with blank screen.
+
+============================================================
+45. THEME SAFETY
+============================================================
+
+The app must not break:
+
+- Shopify theme
+- product page scrolling
+- cart
+- variant selector
+- image gallery
+- sticky add-to-cart
+- mobile navigation
+
+Do not use aggressive global CSS.
+
+Scope all styles to the app.
+
+Do not override theme-wide elements.
+
+============================================================
+46. DUPLICATE INITIALIZATION PROTECTION
+============================================================
+
+Shopify themes can dynamically reload sections.
+
+Make sure the app:
+
+- initializes only once
+- detects existing instance
+- removes old event listeners where required
+- does not duplicate button
+- does not duplicate modal
+- does not duplicate QR
+- does not duplicate model viewer
+
+Test using:
+- page reload
+- theme editor
+- section reload
+- variant change
+- browser back/forward
+
+============================================================
+47. ADMIN SETTINGS
+============================================================
+
+Create settings for:
+
+Eligible categories
+Button text
+Button visibility
+AR enabled/disabled
+Default 3D viewer behavior
+Generation provider
+Generation model
+Generation concurrency
+Retry limit
+Optimization preset
+Dimension units
+QR expiry
+Debug logging
+
+Keep advanced settings hidden behind an Advanced section.
+
+============================================================
+48. API CREDENTIAL SETUP
+============================================================
+
+Create API_SETUP.md explaining EXACTLY where I get each credential.
+
+For each credential explain:
+
+1. What it is
+2. Why the app needs it
+3. Where to get it
+4. Where to paste it
+5. Whether it is secret
+6. Whether it costs money
+7. Whether it is required immediately or later
+
+At minimum document:
+
+Shopify API credentials
+Meshy API key
+Database URL
+Storage credentials if required
+Railway environment variables
+
+IMPORTANT:
+
+Never ask me to paste secrets directly into chat.
+
+Tell me to use:
+Replit Secrets
+or
+Railway Variables
+
+============================================================
+49. DEVELOPMENT PHASES
+============================================================
+
+THIS SECTION IS MANDATORY.
+
+Do NOT attempt to build the entire project in one uncontrolled step.
+
+Build in phases.
+
+============================================================
+PHASE 1 — ARCHITECTURE + FOUNDATION
+============================================================
+
+Build:
+
+- project structure
+- TypeScript setup
+- Shopify app foundation
+- authentication foundation
+- database connection
+- database schema
+- environment configuration
+- basic admin shell
+- health check
+- documentation skeleton
+
+DO NOT:
+- generate real 3D models
+- call expensive Meshy generation
+- bulk process products
+
+At the end report:
+
+PHASE 1 STATUS:
+Completed:
+Failed:
+Missing credentials:
+Warnings:
+Next phase:
+
+============================================================
+PHASE 2 — SHOPIFY PRODUCT SYNC
+============================================================
+
+Implement:
+
+- Shopify GraphQL product fetching
+- product sync
+- eligibility detection
+- Furniture filter
+- Mattress filter
+- product image retrieval
+- dimensions retrieval
+- product list admin screen
+
+DO NOT generate 3D models.
+
+Test:
+- eligible product
+- ineligible product
+- product with multiple images
+- product with variants
+
+Report status before continuing.
+
+============================================================
+PHASE 3 — THEME APP EXTENSION
+============================================================
+
+Build the Shopify Theme App Extension/App Block.
+
+Implement:
+
+- product detection
+- eligibility detection
+- approved model detection
+- View in Your Room button
+- safe CSS
+- mobile responsiveness
+- no duplicate initialization
+
+Test with placeholder/sample model only.
+
+DO NOT use Meshy credits.
+
+============================================================
+PHASE 4 — MODEL DATABASE + ADMIN REVIEW
+============================================================
+
+Build:
+
+- model records
+- model statuses
+- review system
+- approve/reject
+- preview
+- publish/unpublish
+- model metadata
+
+Use sample/local GLB.
+
+No real Meshy generation.
+
+============================================================
+PHASE 5 — MESHY INTEGRATION
+============================================================
+
+Connect Meshy API.
+
+Test ONLY:
+- API credential validation
+- request formatting
+- mock task flow
+- error handling
+- polling logic
+
+DO NOT start a real paid generation.
+
+The system must clearly tell me:
+
+"MESHY INTEGRATION READY — WAITING FOR LIVE GENERATION APPROVAL."
+
+============================================================
+PHASE 6 — GLB OPTIMIZATION + VIEWER
+============================================================
+
+Implement:
+
+- GLB validation
+- optimization
+- model viewer
+- loading
+- errors
+- fallback
+- lazy loading
+
+Use test/sample GLB.
+
+No live Meshy generation.
+
+============================================================
+PHASE 7 — FIRST LIVE PRODUCT
+============================================================
+
+STOP.
+
+Do not automatically continue.
+
+Show me the first eligible product selection screen.
+
+I will explicitly approve.
+
+ONLY after I say:
+
+APPROVE FIRST LIVE GENERATION
+
+you may generate exactly ONE real model.
+
+Do not generate any other product.
+
+============================================================
+PHASE 8 — REVIEW + APPROVAL
+============================================================
+
+Show:
+
+Original images
++
+Generated 3D model
++
+Dimensions
++
+Model metadata
+
+I decide:
+
+APPROVE
+or
+REJECT
+
+Only approved model becomes customer-facing.
+
+============================================================
+PHASE 9 — QR + MOBILE AR
+============================================================
+
+Implement:
+
+Desktop:
+3D viewer + QR
+
+Mobile:
+3D viewer + AR
+
+Test QR:
+desktop → phone → same product
+
+Test:
+invalid token
+expired token
+wrong product
+AR unsupported
+
+============================================================
+PHASE 10 — FULL QA
+============================================================
+
+Run acceptance tests.
+
+============================================================
+PHASE 11 — RAILWAY DEPLOYMENT
+============================================================
+
+Prepare:
+
+- production environment
+- PostgreSQL
+- environment variables
+- build
+- start
+- migrations
+- Shopify app URL
+- OAuth callback
+- webhooks
+- theme extension deployment
+
+Do not deploy until tests pass.
+
+============================================================
+PHASE 12 — CONTROLLED BULK PROCESSING
+============================================================
+
+Only after first live model is approved and production workflow works:
+
+Enable bulk generation.
+
+Start with a small batch.
+
+Example:
+5 products.
+
+Then review.
+
+Then larger batches.
+
+Never blindly process all products.
+
+============================================================
+50. ACCEPTANCE TESTS
+============================================================
+
+ALL MUST PASS.
+
+A. Eligible product opens correctly
+B. Original Shopify images unchanged
+C. Button appears once
+D. Button opens 3D experience
+E. Desktop shows QR
+F. QR opens same product on phone
+G. Mobile 3D viewer works
+H. AR works where supported
+I. Interactive rotation works
+J. Zoom works
+K. Correct dimensions are used
+L. 3D fallback works
+M. Original image fallback works
+N. Ineligible products show no button
+O. Meshy API key is never in browser
+P. Refresh does not duplicate button
+Q. Theme editor does not break
+R. Mobile has no horizontal scrolling
+S. Generation errors are handled
+T. Approved model persists after restart
+U. Product image changes do not auto-spend Meshy credits
+V. Duplicate generation jobs are prevented
+W. Failed jobs are recoverable
+X. App uninstall behavior works
+Y. Webhooks are verified
+Z. Railway deployment works
+
+============================================================
+51. DOCUMENTATION
+============================================================
+
+Create:
+
+README.md
+SETUP.md
+API_SETUP.md
+DEPLOYMENT.md
+TROUBLESHOOTING.md
+
+Documentation should explain:
+
+- project architecture
+- local/Replit setup
+- Shopify setup
+- API scopes
+- Meshy setup
+- database setup
+- environment variables
+- running locally
+- installing Shopify app
+- adding Theme App Block
+- generating first model
+- reviewing model
+- approving model
+- publishing model
+- bulk generation
+- regenerating model
+- handling stale models
+- Railway deployment
+- troubleshooting
+
+============================================================
+52. CODE QUALITY
+============================================================
+
+Use:
+
+- TypeScript
+- clean modular architecture
+- strict typing
+- reusable services
+- environment validation
+- proper error handling
+- database migrations
+- logging
+- comments only where useful
+
+Avoid:
+- giant files
+- duplicated code
+- hardcoded secrets
+- fake APIs
+- fake success messages
+- TODO placeholders presented as completed functionality
+
+============================================================
+53. NO UNNECESSARY FEATURES
+============================================================
+
+Do NOT add:
+
+- social media features
+- analytics dashboard unrelated to 3D/AR
+- payments
+- customer accounts
+- chat
+- recommendation engine
+- AI chatbot
+- unrelated product customization
+
+Focus only on:
+
+Shopify
++
+Furniture/Mattress eligibility
++
+3D generation
++
+GLB optimization
++
+3D viewer
++
+AR
++
+QR
++
+approval
++
+publishing
++
+admin management
+
+============================================================
+54. CRITICAL DEVELOPMENT RULES
+============================================================
+
+RULE 1:
+Do not fake functionality.
+
+RULE 2:
+Do not claim something works unless it was actually tested.
+
+RULE 3:
+Do not silently skip errors.
+
+RULE 4:
+Do not spend Meshy credits without explicit approval.
+
+RULE 5:
+Do not generate all products automatically.
+
+RULE 6:
+Do not modify existing Shopify product images.
+
+RULE 7:
+Do not expose secrets in frontend.
+
+RULE 8:
+Do not deploy broken functionality.
+
+RULE 9:
+Do not continue to the next major phase if the current phase has blocking
+errors. Report the error and wait for instructions.
+
+RULE 10:
+Use mock/sample assets when possible during development.
+
+RULE 11:
+Do not install unnecessary paid services.
+
+RULE 12:
+Prefer open-source tools where they are reliable.
+
+RULE 13:
+Never claim AR compatibility without testing/feature detection.
+
+RULE 14:
+Never claim AI-generated geometry is perfectly identical if source data
+cannot guarantee it.
+
+RULE 15:
+Never automatically regenerate a model because a product image changed.
+
+RULE 16:
+Never overwrite existing Shopify product images.
+
+RULE 17:
+Never put secrets inside source code.
+
+RULE 18:
+Never commit .env files.
+
+============================================================
+55. STARTING INSTRUCTION
+============================================================
+
+START NOW WITH PHASE 1 ONLY.
+
+First inspect the existing Replit project/repository.
+
+Do not immediately build everything.
+
+Tell me:
+
+1. What already exists
+2. What needs to be created
+3. Which framework you recommend based on the current project
+4. Which dependencies are already installed
+5. Which dependencies are missing
+6. Which Shopify credentials are required
+7. Which credentials are required now
+8. Which credentials can wait
+9. Exact environment variables needed
+10. Exact next implementation steps
+
+Then implement PHASE 1.
+
+Do NOT start Meshy generation.
+
+Do NOT spend Meshy credits.
+
+Do NOT bulk process products.
+
+After Phase 1, provide a concise status report:
+
+PHASE:
+STATUS:
+COMPLETED:
+FAILED:
+MISSING CREDENTIALS:
+WARNINGS:
+FILES CREATED/MODIFIED:
+TESTS RUN:
+NEXT PHASE:
+
+WAIT for confirmation before proceeding to the next major phase.
+
+============================================================
+END OF INSTRUCTIONS
+============================================================

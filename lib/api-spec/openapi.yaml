@@ -10,6 +10,20 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Eligible product catalog
+  - name: models
+    description: 3D model generation, review, and publishing
+  - name: queue
+    description: Generation job queue
+  - name: settings
+    description: App configuration
+  - name: status
+    description: Provider/connection health
+  - name: logs
+    description: Webhook and system event log
+  - name: ar
+    description: Public AR/3D viewer lookup
 paths:
   /healthz:
     get:
@@ -24,7 +38,309 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products considered by the eligibility pipeline
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a single product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+
+  /products/{id}/recheck-eligibility:
+    post:
+      operationId: recheckProductEligibility
+      tags: [products]
+      summary: Re-run the eligibility function against the stored product data
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+
+  /models:
+    get:
+      operationId: listModels
+      tags: [models]
+      summary: List product models across every stage of the pipeline
+      responses:
+        "200":
+          description: Models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductModel"
+
+  /models/{id}:
+    get:
+      operationId: getModel
+      tags: [models]
+      summary: Get a single product model
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      responses:
+        "200":
+          description: Model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "404":
+          description: Not found
+
+  /models/{id}/generate:
+    post:
+      operationId: generateModel
+      tags: [models]
+      summary: Queue a generation job for a model (mock provider unless live generation is explicitly enabled)
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateModelRequest"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "400":
+          description: Confirmation required or product ineligible
+        "404":
+          description: Not found
+
+  /models/{id}/approve:
+    post:
+      operationId: approveModel
+      tags: [models]
+      summary: Approve a model in review
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewApproveRequest"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "400":
+          description: Model is not in review
+        "404":
+          description: Not found
+
+  /models/{id}/reject:
+    post:
+      operationId: rejectModel
+      tags: [models]
+      summary: Reject a model in review
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewRejectRequest"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "400":
+          description: Model is not in review
+        "404":
+          description: Not found
+
+  /models/{id}/publish:
+    post:
+      operationId: publishModel
+      tags: [models]
+      summary: Publish an approved model to the storefront
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "400":
+          description: Model is not approved
+        "404":
+          description: Not found
+
+  /models/{id}/unpublish:
+    post:
+      operationId: unpublishModel
+      tags: [models]
+      summary: Unpublish a published model
+      parameters:
+        - $ref: "#/components/parameters/ModelId"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductModel"
+        "400":
+          description: Model is not published
+        "404":
+          description: Not found
+
+  /queue:
+    get:
+      operationId: listQueueJobs
+      tags: [queue]
+      summary: List generation jobs
+      responses:
+        "200":
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GenerationJob"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get app settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSettings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update app settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsUpdate"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSettings"
+
+  /status:
+    get:
+      operationId: getApiStatus
+      tags: [status]
+      summary: Provider and connection status (never faked)
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiStatus"
+
+  /logs:
+    get:
+      operationId: listLogs
+      tags: [logs]
+      summary: Recent webhook and system events
+      responses:
+        "200":
+          description: Log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LogEntry"
+
+  /ar/{token}:
+    get:
+      operationId: getArExperience
+      tags: [ar]
+      summary: Resolve a signed AR/3D viewer token to its published model
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: AR experience payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArExperience"
+        "404":
+          description: Invalid, expired, or unpublished token
+
 components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    ModelId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +350,240 @@ components:
       required:
         - status
 
+    ProductDimensions:
+      type: object
+      description: Real-world dimensions used for AR scale. Absent until an admin calibrates them.
+      properties:
+        width: { type: ["number", "null"] }
+        height: { type: ["number", "null"] }
+        depth: { type: ["number", "null"] }
+        unit:
+          type: string
+          enum: [mm, cm, m, inch, ft]
+      required:
+        - unit
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        shopifyProductId: { type: ["string", "null"] }
+        title: { type: string }
+        handle: { type: string }
+        category: { type: string }
+        eligible: { type: boolean }
+        eligibilityReason: { type: string }
+        primaryImageUrl: { type: ["string", "null"] }
+        imageUrls:
+          type: array
+          items: { type: string }
+        variantCount: { type: integer }
+        dimensions:
+          oneOf:
+            - $ref: "#/components/schemas/ProductDimensions"
+            - type: "null"
+        source:
+          type: string
+          enum: [sample, shopify]
+          description: "'sample' rows are seeded demo data; 'shopify' rows come from a live store sync."
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - title
+        - handle
+        - category
+        - eligible
+        - eligibilityReason
+        - imageUrls
+        - variantCount
+        - source
+        - createdAt
+        - updatedAt
+
+    ProductModel:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        status:
+          type: string
+          enum:
+            [
+              PENDING,
+              ELIGIBLE,
+              QUEUED,
+              PROCESSING,
+              GENERATED,
+              OPTIMIZING,
+              DIMENSION_CALIBRATION,
+              REVIEW,
+              APPROVED,
+              PUBLISHED,
+              FAILED,
+              CANCELLED,
+              STALE,
+            ]
+        provider:
+          type: string
+          enum: [mock, meshy]
+        providerTaskId: { type: ["string", "null"] }
+        originalModelUrl: { type: ["string", "null"] }
+        optimizedModelUrl: { type: ["string", "null"] }
+        thumbnailUrl: { type: ["string", "null"] }
+        imageSetHash: { type: ["string", "null"] }
+        fileSizeBytes: { type: ["integer", "null"] }
+        sourceImageCount: { type: integer }
+        errorMessage: { type: ["string", "null"] }
+        reviewer: { type: ["string", "null"] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        rejectionReason: { type: ["string", "null"] }
+        approvedAt: { type: ["string", "null"], format: date-time }
+        publishedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - productId
+        - status
+        - provider
+        - sourceImageCount
+        - createdAt
+        - updatedAt
+
+    GenerateModelRequest:
+      type: object
+      properties:
+        confirm:
+          type: boolean
+          description: Must be true. Mirrors the required explicit-confirmation step before spending any provider credits.
+      required:
+        - confirm
+
+    ReviewApproveRequest:
+      type: object
+      properties:
+        reviewer: { type: string }
+      required:
+        - reviewer
+
+    ReviewRejectRequest:
+      type: object
+      properties:
+        reviewer: { type: string }
+        reason: { type: string }
+      required:
+        - reviewer
+        - reason
+
+    GenerationJob:
+      type: object
+      properties:
+        id: { type: integer }
+        productModelId: { type: integer }
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, GENERATED, FAILED, CANCELLED]
+        provider:
+          type: string
+          enum: [mock, meshy]
+        attempt: { type: integer }
+        maxAttempts: { type: integer }
+        lastError: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - productModelId
+        - status
+        - provider
+        - attempt
+        - maxAttempts
+        - createdAt
+        - updatedAt
+
+    AppSettings:
+      type: object
+      properties:
+        maxConcurrentGenerations: { type: integer }
+        showButtonBeforePublish: { type: boolean }
+        buttonText: { type: string }
+        defaultUnit:
+          type: string
+          enum: [mm, cm, m, inch, ft]
+        meshyLiveGenerationEnabled:
+          type: boolean
+          description: Stays false until the merchant explicitly approves the first live provider generation.
+      required:
+        - maxConcurrentGenerations
+        - showButtonBeforePublish
+        - buttonText
+        - defaultUnit
+        - meshyLiveGenerationEnabled
+
+    SettingsUpdate:
+      type: object
+      properties:
+        maxConcurrentGenerations: { type: integer, minimum: 1 }
+        showButtonBeforePublish: { type: boolean }
+        buttonText: { type: string, minLength: 1 }
+        defaultUnit:
+          type: string
+          enum: [mm, cm, m, inch, ft]
+
+    ProviderStatus:
+      type: object
+      properties:
+        configured: { type: boolean }
+        mode:
+          type: string
+          enum: [mock, live, unavailable]
+        detail: { type: string }
+      required:
+        - configured
+        - mode
+        - detail
+
+    ApiStatus:
+      type: object
+      properties:
+        shopify: { $ref: "#/components/schemas/ProviderStatus" }
+        meshy: { $ref: "#/components/schemas/ProviderStatus" }
+        database: { $ref: "#/components/schemas/ProviderStatus" }
+        storage: { $ref: "#/components/schemas/ProviderStatus" }
+      required:
+        - shopify
+        - meshy
+        - database
+        - storage
+
+    LogEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        level:
+          type: string
+          enum: [info, warn, error]
+        source: { type: string }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - level
+        - source
+        - message
+        - createdAt
+
+    ArExperience:
+      type: object
+      properties:
+        productTitle: { type: string }
+        modelUrl: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        dimensions:
+          oneOf:
+            - $ref: "#/components/schemas/ProductDimensions"
+            - type: "null"
+      required:
+        - productTitle
+        - modelUrl
