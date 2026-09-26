@@ -215,7 +215,8 @@
   const STOREFRONT_ENDPOINT = API_BASE + "/api/storefront/model";
   const CONNECT_ENDPOINT = API_BASE + "/api/storefront/connect";
   const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
-  const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
+  // The former qrcode/build URL was HTTP 404; qrcodejs is a classic script.
+  const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
 
   // The global bootstrap survives Shopify's section replacement. Each new
   // DOM root gets its own handlers; existing roots are never initialized twice.
@@ -510,20 +511,18 @@
   }
 
   function renderDesktopQr() {
-    const productUrl = new URL(root.dataset.productUrl || window.location.pathname, window.location.origin);
+    const productUrl = new URL(window.location.href);
     productUrl.searchParams.set("view_ar", "1");
+    productUrl.searchParams.delete("view_ar_debug");
     const qrTarget = productUrl.toString();
 
     loadScriptOnce(QRCODE_LIB_SRC)
       .then(() => {
-        if (!window.QRCode || !window.QRCode.toCanvas) throw new Error("QRCode library unavailable");
-        const canvas = document.createElement("canvas");
-        window.QRCode.toCanvas(canvas, qrTarget, { width: 160, margin: 1 }, (err) => {
-          if (err) { showQrFallback(); return; }
-          els.qrCanvas.innerHTML = "";
-          els.qrCanvas.appendChild(canvas);
-          els.qrWrap.hidden = false;
-        });
+        if (!window.QRCode) throw new Error("QRCode library unavailable");
+        els.qrCanvas.replaceChildren();
+        new window.QRCode(els.qrCanvas, { text: qrTarget, width: 160, height: 160, correctLevel: window.QRCode.CorrectLevel.M });
+        els.qrFallback.hidden = true;
+        els.qrWrap.hidden = false;
       })
       .catch(() => showQrFallback());
   }

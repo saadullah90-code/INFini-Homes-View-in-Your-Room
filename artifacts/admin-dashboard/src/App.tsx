@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, Box, Check, CheckCircle2, ChevronRight, CircleAlert, Clock3, Cloud, Copy, Database, ExternalLink, Eye, FileClock, Filter, Grid2X2, Layers3, LayoutDashboard, Package, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck, SlidersHorizontal, Sparkles, Store, UploadCloud, X, XCircle } from 'lucide-react';
@@ -42,7 +42,7 @@ function ModelViewer({url,poster}:{url?:string|null;poster?:string|null}) {
 declare module 'react' { namespace JSX { interface IntrinsicElements { 'model-viewer': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {src?:string;poster?:string;'camera-controls'?:boolean;'auto-rotate'?:boolean;ar?:boolean;'ar-modes'?:string;'shadow-intensity'?:string} } } }
 
 const navMain = [{href:'/dashboard',label:'Overview',icon:LayoutDashboard},{href:'/products',label:'Products',icon:Package},{href:'/models',label:'3D models',icon:Box},{href:'/queue',label:'Job queue',icon:Layers3}];
-const navSystem = [{href:'/status',label:'Connections',icon:Activity},{href:'/logs',label:'Event log',icon:FileClock},{href:'/settings',label:'Settings',icon:Settings2}];
+const navSystem = [{href:'/demo-ar',label:'Free AR demo',icon:Eye},{href:'/status',label:'Connections',icon:Activity},{href:'/logs',label:'Event log',icon:FileClock},{href:'/settings',label:'Settings',icon:Settings2}];
 function Shell({children}:{children:ReactNode}) {
   const [location]=useLocation(); const status=useGetApiStatus();
   const current=[...navMain,...navSystem].find(n=>location.startsWith(n.href));
@@ -246,8 +246,57 @@ function Logs() {
 function ArPreview() {
  const {token=''}=useParams<{token:string}>(),q=useGetArExperience(token,{query:{enabled:!!token,queryKey:getGetArExperienceQueryKey(token)}}); return <div className="ar-page"><div className="eyebrow">INFini Homes / View in your room</div>{q.isLoading?<Load/>:q.isError?<Failure error={q.error} retry={()=>q.refetch()}/>:q.data&&<><h1 className="page-title">{q.data.productTitle}</h1><p className="page-desc">Drag to rotate. Pinch or scroll to zoom. Use AR on a supported device.</p><div className="ar-frame"><ModelViewer url={q.data.modelUrl} poster={q.data.thumbnailUrl}/></div>{q.data.dimensions&&<p className="small">Dimensions: {q.data.dimensions.width??'—'} × {q.data.dimensions.height??'—'} × {q.data.dimensions.depth??'—'} {q.data.dimensions.unit}</p>}</>}</div>;
 }
+// Public demo is deliberately separate from all products and publish state.
+function FreeArDemo() {
+  const qrRoot = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [webglAvailable, setWebglAvailable] = useState(false);
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      setWebglAvailable(!!(canvas.getContext('webgl2') || canvas.getContext('webgl')));
+    } catch { setWebglAvailable(false); }
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+    if (mobile) return;
+    const container = qrRoot.current;
+    if (!container) return;
+    const render = () => {
+      const QRCode = (window as Window & { QRCode?: new (element: HTMLElement, options: { text: string; width: number; height: number }) => void }).QRCode;
+      if (!QRCode || !container.isConnected) { setError('QR library could not load. Open the mobile link instead.'); return; }
+      container.replaceChildren();
+      new QRCode(container, { text: new URL('/demo-ar', location.origin).href, width: 180, height: 180 });
+    };
+    if ((window as Window & { QRCode?: unknown }).QRCode) { render(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.onload = render;
+    script.onerror = () => setError('QR library could not load. Open the mobile link instead.');
+    document.head.appendChild(script);
+    return () => { script.onload = null; script.onerror = null; };
+  }, []);
+  const link = new URL('/demo-ar', window.location.origin).href;
+  return <div className="ar-page" style={{maxWidth:880,margin:'auto',padding:24}}>
+    <div className="eyebrow">FREE TEST / NOT A SHOPIFY PRODUCT</div>
+    <h1 className="page-title">Desktop → phone → room AR demo</h1>
+    <p className="page-desc">This is a sample astronaut, NOT your furniture or mattress. No Meshy credits are spent. Scan on a supported phone, then tap the viewer's AR icon and allow camera access.</p>
+    <div className="ar-frame">{webglAvailable
+      ? <ModelViewer url="https://modelviewer.dev/shared-assets/models/Astronaut.glb" poster="https://modelviewer.dev/shared-assets/models/Astronaut.webp"/>
+      : <div className="viewer-empty"><strong>3D preview requires WebGL</strong><p>This browser or preview environment cannot create a 3D graphics context. Use a supported browser or scan from a supported phone.</p></div>}</div>
+    {!isMobile && <div style={{marginTop:20,display:'grid',gap:12,justifyItems:'start'}}>
+      <strong>Scan this QR to open the demo on your phone</strong>
+      <div ref={qrRoot} style={{padding:12,background:'white'}} aria-label="QR code for this demo"/>
+      {error && <p role="alert">{error}</p>}
+      <a href={link} target="_blank" rel="noreferrer">{link}</a>
+      <p>Phone testing requires the public published site, not localhost or a private preview.</p>
+    </div>}
+    {isMobile && <p style={{marginTop:16}}>Tap the AR icon inside the viewer on a compatible phone. iPhone Quick Look conversion is device-dependent and has not yet been verified on a real iPhone.</p>}
+    <p className="small" style={{marginTop:22}}>Sample model from <a href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a>. This demo cannot publish a product model.</p>
+  </div>;
+}
 function NotFound(){return <Shell><Header eyebrow="NOT FOUND / 404" title="This view doesn't exist." desc="The page may have moved, or the address might be incorrect." action={<Link href="/dashboard" className="btn btn-primary" data-testid="link-return-dashboard"><ArrowLeft size={14}/> Back to overview</Link>}/><Empty title="Nothing at this address" description="Use the navigation to return to your workspace." icon={Grid2X2}/></Shell>}
 function RoutedErrorBoundary({children}:{children:ReactNode}){const [location]=useLocation();return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>}
-function Routes(){return <RoutedErrorBoundary><Switch><Route path="/ar/:token" component={ArPreview}/><Route path="/"><Shell><Dashboard/></Shell></Route><Route path="/dashboard"><Shell><Dashboard/></Shell></Route><Route path="/products/:id"><Shell><ProductDetail/></Shell></Route><Route path="/products"><Shell><Products/></Shell></Route><Route path="/models/:id"><Shell><ModelDetail/></Shell></Route><Route path="/models"><Shell><Models/></Shell></Route><Route path="/queue"><Shell><Queue/></Shell></Route><Route path="/settings"><Shell><Settings/></Shell></Route><Route path="/status"><Shell><Status/></Shell></Route><Route path="/logs"><Shell><Logs/></Shell></Route><Route component={NotFound}/></Switch></RoutedErrorBoundary>}
+function Routes(){return <RoutedErrorBoundary><Switch><Route path="/ar/:token" component={ArPreview}/><Route path="/demo-ar" component={FreeArDemo}/><Route path="/"><Shell><Dashboard/></Shell></Route><Route path="/dashboard"><Shell><Dashboard/></Shell></Route><Route path="/products/:id"><Shell><ProductDetail/></Shell></Route><Route path="/products"><Shell><Products/></Shell></Route><Route path="/models/:id"><Shell><ModelDetail/></Shell></Route><Route path="/models"><Shell><Models/></Shell></Route><Route path="/queue"><Shell><Queue/></Shell></Route><Route path="/settings"><Shell><Settings/></Shell></Route><Route path="/status"><Shell><Status/></Shell></Route><Route path="/logs"><Shell><Logs/></Shell></Route><Route component={NotFound}/></Switch></RoutedErrorBoundary>}
 function App(){return <QueryClientProvider client={queryClient}><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/,'')}><Routes/></WouterRouter></QueryClientProvider>}
 export default App;
