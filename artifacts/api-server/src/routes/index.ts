@@ -7,6 +7,8 @@ import settingsRouter from "./settings";
 import statusRouter from "./status";
 import logsRouter from "./logs";
 import arRouter from "./ar";
+import shopifyAuthRouter from "./shopify-auth";
+import shopifyWebhooksRouter from "./shopify-webhooks";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use(settingsRouter);
 router.use(statusRouter);
 router.use(logsRouter);
 router.use(arRouter);
+router.use(shopifyAuthRouter);
+router.use(shopifyWebhooksRouter);
 
 export default router;

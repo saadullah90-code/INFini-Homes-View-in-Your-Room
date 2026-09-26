@@ -1,0 +1,18 @@
+# Foundation only -- not yet linked to a Shopify CLI app project or deployed.
+#
+# A Theme App Extension is deployed via `shopify app deploy` from a project
+# created with the Shopify CLI (`shopify app init` / `shopify app generate
+# extension`), which this pnpm monorepo is not. This directory holds the
+# extension's source in the standard shape so it can be dropped into a CLI
+# project (or the CLI can be pointed at this app) when the storefront-facing
+# "View in Your Room" button is built.
+#
+# Until then: this is not registered with Shopify, not deployed, and has no
+# effect on the live store.
+
+name = "infini-homes-3d-ar-viewer"
+type = "theme"
+
+[[extensions.metafields]]
+namespace = "infini_homes"
+key = "ar_model_url"

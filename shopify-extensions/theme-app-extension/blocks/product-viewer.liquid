@@ -1,0 +1,23 @@
+{% comment %}
+  Foundation placeholder for the "View in Your Room" / "View in Your Space"
+  app block. Not wired to any deployed extension yet -- see README.md in
+  this directory. When built out, this block will:
+    - Read the product's published AR/3D model reference (synced from this
+      app's `/ar/:token` handoff) via a product metafield.
+    - Render Google `<model-viewer>` with `ar` enabled, plus a "View in Your
+      Room" button, only when a PUBLISHED model exists for the product.
+    - Fall back to rendering nothing when no model is published, so it never
+      changes a product page's appearance for ineligible products.
+{% endcomment %}
+
+<div class="infini-homes-ar-block" data-product-id="{{ product.id }}">
+  <!-- Placeholder: no model-viewer markup yet. This block is not deployed. -->
+</div>
+
+{% schema %}
+{
+  "name": "View in Your Room (AR)",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
