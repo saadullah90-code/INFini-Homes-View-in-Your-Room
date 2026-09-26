@@ -1,0 +1,110 @@
+IMPORTANT: The Shopify installation URL you generated resulted in:
+
+"Oops, something went wrong."
+"Unauthorized Access"
+
+Do NOT generate another manual /admin/oauth/authorize URL yet.
+
+I want you to stop and reconcile our implementation with Shopify's CURRENT
+2026 Dev Dashboard + Custom Distribution installation flow.
+
+IMPORTANT DISCOVERY:
+
+This app was created for the existing production store:
+
+https://infinihomes.shop/
+myshopify domain:
+infinihomes.myshopify.com
+
+The app is intended for ONE existing merchant store.
+
+Shopify's current recommended flow for a partner-built app for a client store
+is Custom Distribution + an official Shopify-generated install link.
+
+TASK:
+
+1. Inspect the current Shopify app configuration.
+2. Confirm whether this app currently has a Distribution method selected.
+3. If Distribution is not selected, tell me exactly where I must select
+   "Custom distribution" in the Shopify Dev Dashboard.
+4. Do NOT create a second Shopify app.
+5. Do NOT delete the existing app.
+6. Do NOT rotate the Client Secret.
+7. Do NOT change the existing Client ID.
+8. Do NOT generate another manual authorization URL yet.
+
+AUTHENTICATION ARCHITECTURE:
+
+Our current backend is a standalone Express application and currently
+implements an authorization-code callback:
+
+/api/shopify/auth/callback
+
+Therefore, either:
+
+A) Keep the app as a NON-EMBEDDED standalone app and use the authorization
+   code grant correctly,
+
+OR
+
+B) If Shopify configuration requires this app to be embedded, then explain
+   exactly what backend authentication changes are required to use Shopify's
+   current token-exchange flow.
+
+Do NOT mix embedded configuration with standalone authorization-code flow.
+
+For our current architecture, prefer option A unless there is a specific
+technical reason not to.
+
+The storefront Theme App Extension does NOT require the admin dashboard
+itself to be embedded.
+
+SHOPIFY INSTALLATION:
+
+Do NOT manually construct:
+
+/admin/oauth/authorize
+
+until the app's Custom Distribution configuration is correctly established.
+
+Once Custom Distribution is configured, use Shopify's official generated
+install link for the target store.
+
+If the official install link installs the app first and then requires our
+authorization-code flow, implement that correctly.
+
+READ-ONLY REQUIREMENT:
+
+Keep:
+
+read_products
+
+for now.
+
+Do not add write scopes yet.
+
+Do NOT:
+- modify products
+- modify product images
+- modify media
+- publish 3D models
+- generate Meshy models
+- spend Meshy credits
+- bulk sync the catalog
+
+AFTER FIXING THE SHOPIFY INSTALL FLOW:
+
+STOP and report:
+
+1. Distribution method:
+2. Embedded or standalone:
+3. Authentication method:
+4. Official Shopify install method:
+5. Exact callback URL:
+6. Exact app URL:
+7. Required scopes:
+8. Whether a new Shopify app version must be released:
+9. Whether I need to generate a Custom Distribution install link:
+10. Exact next action I need to take in Shopify Dev Dashboard.
+
+Do NOT automatically continue after this report.
