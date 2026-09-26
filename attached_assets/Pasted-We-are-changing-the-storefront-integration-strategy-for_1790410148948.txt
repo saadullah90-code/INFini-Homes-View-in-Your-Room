@@ -1,0 +1,590 @@
+We are changing the storefront integration strategy for the INFini Homes "View in Your Room" project.
+
+IMPORTANT:
+Do NOT delete or rewrite the existing backend architecture.
+Do NOT remove the existing admin dashboard, database schema, product/model/job state machine, mock generation, approval/publish workflow, logs, or existing AR token route.
+Do NOT change Shopify App Distribution, OAuth, API credentials, Shopify scopes, webhooks, or existing Shopify configuration.
+Do NOT start any real Meshy generation.
+Do NOT spend any Meshy credits.
+Do NOT modify any existing Shopify product images.
+Do NOT bulk generate models.
+
+NEW STOREFRONT STRATEGY:
+Instead of requiring the Shopify app to be installed for the storefront frontend, we will use a Shopify Custom Liquid section/block on the INFini Homes product page.
+
+The Custom Liquid frontend will communicate with our Replit backend through safe public storefront API endpoints.
+
+The final architecture should be:
+
+SHOPIFY PRODUCT PAGE
+    ↓
+CUSTOM LIQUID FRONTEND
+    ↓
+REPLIT PUBLIC STOREFRONT API
+    ↓
+DATABASE / APPROVED 3D MODEL
+    ↓
+GLB + USDZ
+    ↓
+MODEL-VIEWER / AR
+
+The Replit backend will later be moved to Railway without changing the frontend architecture.
+
+==================================================
+PHASE 1 — INSPECT EXISTING PROJECT FIRST
+==================================================
+
+Before changing code:
+
+1. Inspect the complete current project.
+2. Identify:
+   - existing Express API
+   - database schema
+   - products table
+   - product_models table
+   - generation_jobs table
+   - admin dashboard
+   - existing eligibility logic
+   - existing mock generation
+   - approval/publish workflow
+   - existing /ar/:token route
+   - existing Shopify integration files
+   - current environment variables
+3. Do NOT make assumptions.
+4. Do not modify anything until the inspection is complete.
+
+Then report:
+- current architecture
+- files that will be changed
+- files that will remain untouched
+- any technical risks
+
+STOP after the inspection and wait for the next instruction.
+
+==================================================
+PHASE 2 — STOREFRONT API
+==================================================
+
+After inspection, create a dedicated public storefront API.
+
+The API must ONLY expose safe published information.
+
+Create an endpoint similar to:
+
+GET /api/storefront/model
+
+Accepted parameters:
+- shop
+- product_handle
+- optionally product_id
+
+Example:
+
+/api/storefront/model?shop=infinihomes.shop&product_handle=example-product
+
+The endpoint must:
+
+1. Validate the shop against an allowlist:
+   - infinihomes.shop
+   - www.infinihomes.shop
+
+2. Never expose:
+   - Shopify Admin API access tokens
+   - Shopify API secret
+   - Meshy API key
+   - database credentials
+   - internal admin information
+   - generation job internals
+   - private file paths
+
+3. Find the matching local product/model.
+
+4. Only return a model when:
+   - product is eligible
+   - model status is PUBLISHED
+   - model has valid GLB
+   - required AR asset exists
+
+5. If no published model exists, return a clean response such as:
+
+{
+  "available": false
+}
+
+6. If published, return only safe fields such as:
+
+{
+  "available": true,
+  "productHandle": "...",
+  "modelUrl": "...",
+  "usdzUrl": "...",
+  "arUrl": "...",
+  "title": "...",
+  "version": "...",
+  "updatedAt": "..."
+}
+
+Do not expose database IDs unless genuinely required.
+
+7. Add CORS support ONLY for:
+   https://infinihomes.shop
+   https://www.infinihomes.shop
+
+Do not use wildcard "*" CORS for authenticated/admin endpoints.
+
+8. Add reasonable rate limiting to public storefront endpoints.
+
+9. Add strict input validation.
+
+10. Do not allow arbitrary URL fetching through query parameters.
+
+==================================================
+PHASE 3 — CUSTOM LIQUID FRONTEND
+==================================================
+
+Create a production-ready Shopify Custom Liquid snippet that can be pasted into:
+
+Shopify Admin
+→ Online Store
+→ Themes
+→ Customize
+→ Product template
+→ Custom Liquid
+
+The code must work without requiring a Shopify App Block.
+
+Create a file in the project:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+This file should contain the complete storefront frontend.
+
+It must NOT require us to manually edit multiple files.
+
+The user should be able to copy the complete code and paste it into one Custom Liquid section/block.
+
+The frontend must:
+
+1. Detect the current Shopify product automatically.
+
+Use Shopify Liquid variables such as:
+- product.id
+- product.handle
+- product.title
+- product.vendor
+- product.type
+- product.featured_image
+- product.images
+
+2. Do NOT alter:
+   - product images
+   - product gallery
+   - product price
+   - product variants
+   - Add to Cart
+   - theme layout
+
+3. Only add the View in Your Room UI.
+
+4. The button must be displayed only when the backend says a PUBLISHED model exists.
+
+5. Do not show the button for:
+   - Bedsheets
+   - Curtains
+   - Lamps
+   - Accessories
+   - unrelated products
+   - products without an approved/published model
+
+The backend must remain the final authority for eligibility.
+
+6. Prevent duplicate buttons if the Custom Liquid section is accidentally added twice.
+
+Use a unique DOM ID/data attribute.
+
+7. Use an isolated CSS namespace so existing theme CSS cannot break the component.
+
+8. Do not globally modify:
+   - body
+   - html
+   - h1
+   - buttons
+   - img
+   - theme classes
+
+9. Make the UI responsive.
+
+==================================================
+PHASE 4 — 3D VIEWER
+==================================================
+
+Use Google's <model-viewer> web component.
+
+Load it safely from an official CDN.
+
+The viewer must support:
+
+- GLB
+- camera controls
+- zoom
+- rotate
+- auto-rotate optional
+- AR
+- fullscreen/modal viewing
+
+Use:
+
+ar-modes="webxr scene-viewer quick-look"
+
+where supported.
+
+The UI should include:
+
+VIEW IN YOUR ROOM
+
+When clicked:
+
+- Desktop:
+  open a clean modal containing the 3D model
+  and show a QR code for the same product's AR experience.
+
+- Mobile:
+  open the 3D/AR experience directly.
+
+The modal must be professionally designed and mobile responsive.
+
+Do not interfere with the Shopify theme.
+
+==================================================
+PHASE 5 — IOS + ANDROID AR
+==================================================
+
+Do NOT assume GLB alone is enough for every mobile AR device.
+
+The architecture must support:
+
+Android:
+- WebXR where supported
+- Scene Viewer fallback
+
+iOS:
+- AR Quick Look using USDZ
+
+Therefore the published model record must support:
+
+GLB URL
+USDZ URL
+
+If USDZ generation is not implemented yet, do NOT pretend it is complete.
+
+Create the proper asset pipeline/interface for it and clearly report what remains.
+
+Do not use fake USDZ URLs.
+
+==================================================
+PHASE 6 — QR CODE
+==================================================
+
+On desktop, generate a QR code that opens the product's storefront AR experience on a mobile device.
+
+Do not put secrets into the QR code.
+
+The QR destination should be something like:
+
+https://infinihomes.shop/products/{product-handle}?view_ar=1
+
+Use the actual Shopify product URL.
+
+When the page loads with:
+
+?view_ar=1
+
+the Custom Liquid frontend should automatically open the AR/model experience when the published model is available.
+
+Do not create an insecure token containing secrets.
+
+If the existing secure /ar/:token route is useful internally, keep it, but do not expose sensitive data through the QR URL.
+
+==================================================
+PHASE 7 — PRODUCT DATA SYNC WITHOUT ADMIN API
+==================================================
+
+Because the storefront frontend is now the integration point, create a safe product registration/update mechanism.
+
+When the Custom Liquid component loads on an eligible product page, it can send safe public product metadata to Replit:
+
+- Shopify product ID
+- product handle
+- title
+- product type
+- vendor
+- product URL
+- product image URLs
+- variant information where necessary
+- dimensions if available in public Liquid metafields
+- a stable image-set hash
+
+IMPORTANT:
+
+This endpoint must NOT trigger Meshy generation automatically.
+
+It only creates/updates the local product record and marks model state appropriately.
+
+If product images change:
+- calculate image_set_hash
+- detect changes
+- mark existing model as STALE/NEEDS_REVIEW if appropriate
+- DO NOT automatically regenerate
+- DO NOT spend Meshy credits
+
+Do not download arbitrary external URLs.
+
+Only accept valid Shopify CDN image URLs.
+
+==================================================
+PHASE 8 — ELIGIBILITY
+==================================================
+
+Keep the existing server-side eligibility logic.
+
+Eligible:
+- Furniture
+- Mattresses
+
+Use proper word-boundary/category logic.
+
+Do not use naive substring matching.
+
+For example:
+
+"Bedsheet Set"
+must NOT become eligible just because it contains a word that resembles furniture logic.
+
+"Lamp"
+must remain excluded.
+
+The backend must remain authoritative.
+
+==================================================
+PHASE 9 — ADMIN WORKFLOW
+==================================================
+
+Keep the existing admin dashboard.
+
+The dashboard should allow us to:
+
+1. See synced storefront products.
+2. See eligible products.
+3. See whether a model exists.
+4. See model status.
+5. Generate a model manually.
+6. Review the generated model.
+7. Approve it.
+8. Publish it.
+9. Unpublish it.
+10. Regenerate manually.
+11. See generation history.
+12. See failures/logs.
+
+The existing state machine must remain:
+
+PENDING
+→ PROCESSING
+→ GENERATED
+→ OPTIMIZING
+→ REVIEW
+→ APPROVED
+→ PUBLISHED
+
+Failures must be handled safely.
+
+No duplicate jobs.
+
+No automatic bulk generation.
+
+==================================================
+PHASE 10 — MESHY SAFETY
+==================================================
+
+VERY IMPORTANT:
+
+Do NOT enable real Meshy generation.
+
+Keep the existing hard safety gate:
+
+"APPROVE FIRST LIVE GENERATION"
+
+Real generation must remain blocked until that exact approval is explicitly provided later.
+
+For now:
+- use mock generation
+- test the complete workflow
+- test API responses
+- test frontend behavior
+- test viewer
+- test QR
+- test eligibility
+- test publishing
+- test stale image detection
+
+Never consume Meshy credits during this phase.
+
+==================================================
+PHASE 11 — SECURITY
+==================================================
+
+Frontend code is public.
+
+Therefore NEVER put these into Custom Liquid:
+
+- SHOPIFY_API_SECRET
+- SHOPIFY_ACCESS_TOKEN
+- MESHY_API_KEY
+- database password
+- private signing secrets
+- admin credentials
+
+All secrets remain server-side in Replit environment variables.
+
+Public storefront API must expose only safe published model metadata.
+
+Admin endpoints must remain protected.
+
+Validate all incoming data.
+
+Prevent:
+- arbitrary file upload
+- arbitrary URL fetching
+- SSRF
+- path traversal
+- malicious product IDs
+- oversized requests
+- duplicate generation requests
+
+==================================================
+PHASE 12 — REPLIT → RAILWAY COMPATIBILITY
+==================================================
+
+Do not use Replit-only architecture.
+
+Keep:
+
+- environment variables
+- PostgreSQL
+- Express
+- portable filesystem assumptions
+- external/public asset URLs
+- standard Node.js commands
+
+Do not store production GLB/USDZ assets permanently on local Replit filesystem.
+
+Prepare the storage abstraction so it can later use:
+- Shopify CDN
+- S3-compatible storage
+- Cloudflare R2
+- or another object storage
+
+without rewriting the application.
+
+The final migration should be:
+
+REPLIT DEVELOPMENT
+→ RAILWAY PRODUCTION
+
+with minimal code changes.
+
+==================================================
+PHASE 13 — TESTING
+==================================================
+
+Create automated/manual tests for:
+
+1. Eligible furniture product.
+2. Eligible mattress product.
+3. Bedsheet product excluded.
+4. Lamp excluded.
+5. Product without model.
+6. Product with published model.
+7. Duplicate Custom Liquid block.
+8. Desktop modal.
+9. Mobile viewer.
+10. QR generation.
+11. ?view_ar=1 behavior.
+12. GLB URL.
+13. USDZ URL.
+14. Invalid product handle.
+15. Invalid shop.
+16. CORS.
+17. Rate limiting.
+18. No secret exposed in frontend.
+19. Product images remain unchanged.
+20. Image change creates stale state but does not generate automatically.
+21. Admin generation remains blocked without explicit approval.
+22. Publish/unpublish behavior.
+23. Existing admin dashboard still works.
+
+==================================================
+PHASE 14 — OUTPUT FILE
+==================================================
+
+At the end, provide the exact complete Custom Liquid code in:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+It must be copy/paste ready.
+
+Also provide:
+
+shopify-custom-liquid/README.md
+
+with exactly these instructions:
+
+1. Shopify Admin open karo.
+2. Online Store → Themes → Customize.
+3. Product template open karo.
+4. Custom Liquid section/block add karo.
+5. Complete contents of view-in-your-room.liquid paste karo.
+6. Save.
+7. Open an eligible product.
+8. Test button.
+9. Test 3D.
+10. Test QR.
+11. Test mobile AR.
+
+Do not require the user to edit JavaScript manually.
+
+If a backend URL is required in the Custom Liquid code, make it a single clearly marked configuration value at the very top:
+
+const VIEW_IN_YOUR_ROOM_API = "https://...";
+
+Do not hard-code secrets.
+
+==================================================
+FINAL REPORT
+==================================================
+
+After implementation, report:
+
+A. Files changed
+B. Files created
+C. Database changes
+D. API endpoints added
+E. Custom Liquid file location
+F. Tests performed
+G. Tests passed
+H. Tests failed
+I. Remaining issues
+J. Missing credentials/configuration
+K. Whether real Meshy generation remains blocked
+L. Exact next action
+
+IMPORTANT:
+Do not say "complete" if any required part is mocked, missing, or untested.
+
+Do not silently skip anything.
+
+Do not change Shopify OAuth/distribution/settings.
+
+Do not start real Meshy generation.
+
+STOP after completing this implementation and report the results.
