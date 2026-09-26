@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "VTKJ6RZJEdH17L6UCIJK6"
+uri = "file://attached_assets/generated_models/mattress-inspection.png"
+type = "image"
+title = "Mattress GLB — 200 × 210 × 20 cm"
+description = "CPU-rendered inspection of the actual size-based GLB mesh. This is a procedural approximation, not a product scan or proof of native AR."
+logical_id = "8c9d90ed-176a-4865-b70d-594a31829729"
+content_hash = "sha256:e4044589d5474ff3a175043ab5aa7bc52c0f56f60862f6620c68982461d4ac65"
+size = 31950
+mtime_ms = 1790428445402
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:22a9ae4d-ce01-4ecf-8256-285c64105e6d/8c9d90ed-176a-4865-b70d-594a31829729/442b670a-f280-4fc0-af46-6ade2d0612fb"
+storage_version_token = "1790428723048823"
+content_type = "image/png"

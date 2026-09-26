@@ -111,7 +111,7 @@ export const ListModelsResponseItem = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -142,7 +142,7 @@ export const GetModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -162,7 +162,7 @@ export const GetModelResponse = zod.object({
 
 
 /**
- * @summary Queue a generation job for a model (mock provider unless live generation is explicitly enabled)
+ * @summary Assign a verified prepared GLB for a real product; samples use mock demo assets only
  */
 export const GenerateModelParams = zod.object({
   "id": zod.coerce.number().int()
@@ -176,7 +176,7 @@ export const GenerateModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -193,6 +193,16 @@ export const GenerateModelResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Stream a public App Storage object
+ */
+export const GetPublicObjectParams = zod.object({
+  "objectPath": zod.coerce.string().describe('Relative public path such as product-models/model.glb; path may contain slashes.')
+})
+
+export const GetPublicObjectResponse = zod.unknown()
 
 
 /**
@@ -210,7 +220,7 @@ export const ApproveModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -245,7 +255,7 @@ export const RejectModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -275,7 +285,7 @@ export const PublishModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -305,7 +315,7 @@ export const UnpublishModelResponse = zod.object({
   "id": zod.number().int(),
   "productId": zod.number().int(),
   "status": zod.enum(['PENDING', 'ELIGIBLE', 'QUEUED', 'PROCESSING', 'GENERATED', 'OPTIMIZING', 'DIMENSION_CALIBRATION', 'REVIEW', 'APPROVED', 'PUBLISHED', 'FAILED', 'CANCELLED', 'STALE']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "providerTaskId": zod.string().nullish(),
   "originalModelUrl": zod.string().nullish(),
   "optimizedModelUrl": zod.string().nullish(),
@@ -331,7 +341,7 @@ export const ListQueueJobsResponseItem = zod.object({
   "id": zod.number().int(),
   "productModelId": zod.number().int(),
   "status": zod.enum(['PENDING', 'PROCESSING', 'GENERATED', 'FAILED', 'CANCELLED']),
-  "provider": zod.enum(['mock', 'meshy']),
+  "provider": zod.enum(['mock', 'meshy', 'prepared']),
   "attempt": zod.number().int(),
   "maxAttempts": zod.number().int(),
   "lastError": zod.string().nullish(),
@@ -432,7 +442,8 @@ export const GetArExperienceResponse = zod.object({
   "height": zod.number().nullish(),
   "depth": zod.number().nullish(),
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
-}).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional()
+}).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
+  "modelNotice": zod.string().optional()
 })
 
 
@@ -461,7 +472,14 @@ export const GetStorefrontModelResponse = zod.object({
   "title": zod.string().optional(),
   "modelUrl": zod.string().optional(),
   "thumbnailUrl": zod.string().nullish(),
-  "arUrl": zod.string().optional()
+  "arUrl": zod.string().optional(),
+  "dimensions": zod.union([zod.object({
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "depth": zod.number().nullish(),
+  "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
+}).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
+  "modelNotice": zod.string().optional()
 }).describe('Only ever contains public, already-published data. `available: false` carries no other fields.\n')
 
 

@@ -8,20 +8,20 @@
 4. Wahan **Custom Liquid** section/block add karo (Add block → Custom Liquid).
 5. `view-in-your-room.liquid` ka **complete code** copy karke paste karo.
 6. **Save** karo.
-7. Ek eligible product open karo (Furniture ya Mattress category wala, jiska model backend par PUBLISHED ho).
+7. Ek eligible product open karo (Furniture ya Mattress category wala).
 8. **"View in Your Room"** button test karo.
-9. Desktop par QR code test karo (button dabao → modal khulay → QR scan karo).
-10. Mobile par test karo (button se seedha 3D/AR khulay).
+9. Desktop par **View in Your Room** dabao → viewer khulay → **Show QR code** dabao → phone se scan karo. **Hide QR code** se band karo; modal close/reopen par QR reset hota hai.
+10. Mobile/iPad par viewer khol kar **View in your space (AR)** tap karo (agar browser/device support karta ho). QR scan sirf product page/viewer kholta hai, camera automatically nahin.
 
 Sirf **ek hi file** paste karni hai — koi doosri JS/CSS file alag se add karne ki zaroorat nahi.
 
 ## What you need to know before relying on this
 
-- **Real Meshy generation is not enabled yet.** Every model in the system right now is a mock sample asset used to test the review/approve/publish pipeline — no real Meshy credits have been spent, and none will be until you give the exact explicit approval phrase the project requires.
-- **A published model is required for the button to appear.** If a product has no model, or its model hasn't been approved and published in the admin dashboard, the "View in Your Room" button simply does not render on that product page. The Replit backend is the single source of truth for this — the Liquid code never guesses.
-- **USDZ / iOS "Quick Look" AR is not considered complete.** There is currently no real USDZ generation pipeline. On iPhone/iPad, the 3D viewer still works (rotate/zoom), but the AR button is intentionally hidden with a plain note ("AR view for iPhone/iPad isn't available for this product yet.") instead of pointing at a fake or broken asset. Android AR (WebXR / Google Scene Viewer) uses the real GLB and does work today, where the device supports it.
+- **Only a published model can be previewed or handed off to AR.** The backend decides eligibility and availability. An eligible product may display the button before its model is published; the modal then clearly says it is unavailable and offers **Retry**. A failed availability check also offers Retry. Neither case creates a pretend model or QR code.
+- **Modeled size is not a selected-variant promise.** The specific generated mattress preview is **200W × 210L × 20H cm only**. It is not verified for other mattress variants, and choosing a different Shopify variant does not resize the 3D model. Where the API supplies `dimensions` (`width`, `height`, `depth`, `unit`) and/or `modelNotice`, the modal displays the modeled preview dimensions and notice; the size disclaimer remains visible even if metadata is missing. Do not use this preview as an exact measurement of a different variant.
+- **AR support depends on the actual published GLB and device/browser.** Mobile/iPad shows a direct tap-to-launch AR button only after the model loads; unsupported browsers show a note instead. On supported iOS, model-viewer may generate Quick Look USDZ from the GLB at tap time; there is no separate verified USDZ asset or guarantee Quick Look works on every device. No automatic camera activation occurs.
 - **Replit is currently the backend.** The one line to change later, when moving to Railway, is `VIEW_IN_YOUR_ROOM_API` near the top of the `<script>` block in `view-in-your-room.liquid`. Nothing else in the file needs to change.
-- **No secrets are in this file.** It only ever calls one public, read-only endpoint (`GET /api/storefront/model`) that is restricted to `infinihomes.shop` / `www.infinihomes.shop` and returns nothing beyond a title, a model URL, a thumbnail, and an AR link — no Shopify token, no Meshy key, no database ID.
+- **No secrets are in this file.** It calls the public storefront model availability endpoint (`GET /api/storefront/model`) and product connection endpoint (`POST /api/storefront/connect`) using public product details. No Shopify token or Meshy key is included.
 
 ## How it works
 
@@ -30,13 +30,12 @@ Shopify product page
   → Custom Liquid block (this file)
   → GET {backend}/api/storefront/model?shop=...&product_handle={{ product.handle }}
   → backend checks: product eligible? model PUBLISHED? real GLB URL exists?
-  → available:false  → button stays hidden, nothing else happens
-  → available:true   → button shows → click opens a modal with <model-viewer>
-                         → desktop: also shows a QR code to the same product
-                           page with ?view_ar=1, for a mobile handoff
+   → eligible, available:false → button may show an unavailable/retry state
+   → available:true   → button shows → click opens a modal with <model-viewer>
+                          → desktop: Show QR code reveals handoff QR on request
                          → mobile: opening the page with ?view_ar=1 (e.g. from
                            the QR scan) auto-opens the viewer once availability
                            is confirmed
 ```
 
-The QR code and the `?view_ar=1` parameter never carry any token or secret — they just point back at the normal, public Shopify product URL.
+The QR points to the canonical Shopify product page with `view_ar=1` and the selected numeric `variant` query parameter (from the page URL or Shopify product form, if available). It never carries a token or secret; debug and unrelated URL parameters are excluded. Scanning opens the viewer, **not** AR automatically.

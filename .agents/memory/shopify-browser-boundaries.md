@@ -19,3 +19,9 @@ On iPhone, prefer an explicit, prominent Quick Look action; never promise automa
 **Why:** The user confirmed the explicit native AR demo worked, whereas the embedded 3D preview alone was mistaken for the intended room-camera flow.
 
 **How to apply:** Use a real USDZ when available, or disclose conversion limitations when generating USDZ from GLB. A successful sample demo does not verify a different product model or its physical scale.
+
+Keep a generated or procedural product representation explicitly distinguished from an exact product scan; fixed-size previews must disclose that other variants are not represented.
+
+**Why:** The merchant needs their own product rather than unrelated sample assets, but a mattress title and listed dimensions do not establish its exact fabric, geometry, or every size variant.
+
+**How to apply:** Preserve the approximation and modeled-size notice through admin review, storefront, and AR handoff. Agent setup verification is not merchant visual approval.

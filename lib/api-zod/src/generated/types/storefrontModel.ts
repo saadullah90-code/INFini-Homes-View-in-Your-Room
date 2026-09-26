@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductDimensions } from './productDimensions';
 
 /**
  * Only ever contains public, already-published data. `available: false` carries no other fields.
@@ -17,4 +18,6 @@ export interface StorefrontModel {
   /** @nullable */
   thumbnailUrl?: string | null;
   arUrl?: string;
+  dimensions?: ProductDimensions | null;
+  modelNotice?: string;
 }

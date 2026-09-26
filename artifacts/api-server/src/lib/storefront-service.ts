@@ -2,6 +2,7 @@ import { db, productsTable, productModelsTable, logEntriesTable } from "@workspa
 import { and, desc, eq, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { isEligibleProduct } from "./eligibility";
+import { getPreparedModel, resolveModelUrl } from "./prepared-models";
 
 // Public, shop-restricted read model for the storefront Custom Liquid
 // frontend. Every function here is read-only: nothing writes to `products`
@@ -84,6 +85,8 @@ export interface StorefrontModelResult {
   modelUrl?: string;
   thumbnailUrl?: string | null;
   arUrl?: string;
+  dimensions?: { width: number | null; height: number | null; depth: number | null; unit: string };
+  modelNotice?: string;
 }
 
 /**
@@ -111,17 +114,26 @@ export async function getStorefrontModel(
     .from(productModelsTable)
     .where(eq(productModelsTable.productId, product.id));
 
-  if (!model || model.status !== "PUBLISHED" || !model.optimizedModelUrl || !model.arToken) {
+  if (!model || model.status !== "PUBLISHED" || !model.optimizedModelUrl || !model.arToken ||
+      (product.source !== "sample" && model.provider === "mock")) {
     return { available: false };
   }
 
+  const prepared = model.provider === "prepared" ? await getPreparedModel(product.handle) : null;
+  if (model.provider === "prepared" && !prepared) {
+    throw new Error(`Published prepared model registry entry missing for ${product.handle}`);
+  }
   return {
     available: true,
     productHandle: product.handle,
     title: product.title,
-    modelUrl: model.optimizedModelUrl,
+    modelUrl: resolveModelUrl(model.optimizedModelUrl, appBaseUrl),
     thumbnailUrl: model.thumbnailUrl,
     arUrl: `${appBaseUrl}/api/ar/${model.arToken}`,
+    ...(prepared ? {
+      dimensions: prepared.dimensions,
+      modelNotice: prepared.notice,
+    } : {}),
   };
 }
 

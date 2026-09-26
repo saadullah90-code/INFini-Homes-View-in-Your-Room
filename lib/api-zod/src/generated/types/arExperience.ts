@@ -13,4 +13,5 @@ export interface ArExperience {
   /** @nullable */
   thumbnailUrl?: string | null;
   dimensions?: ProductDimensions | null;
+  modelNotice?: string;
 }

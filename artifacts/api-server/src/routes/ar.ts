@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, productModelsTable, productsTable } from "@workspace/db";
 import { GetArExperienceParams, GetArExperienceResponse } from "@workspace/api-zod";
+import { getAppBaseUrl } from "../lib/shopify-config";
+import { getPreparedModel, resolveModelUrl } from "../lib/prepared-models";
 
 const router: IRouter = Router();
 
@@ -33,11 +35,20 @@ router.get("/ar/:token", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Invalid, expired, or unpublished token" });
     return;
   }
+  if (product.source !== "sample" && model.provider === "mock") {
+    res.status(404).json({ error: "No real model is published for this product" });
+    return;
+  }
+  const prepared = model.provider === "prepared" ? await getPreparedModel(product.handle) : null;
+  if (model.provider === "prepared" && !prepared) {
+    res.status(500).json({ error: `Published prepared model registry entry missing for ${product.handle}` });
+    return;
+  }
 
   res.json(
     GetArExperienceResponse.parse({
       productTitle: product.title,
-      modelUrl: model.optimizedModelUrl,
+      modelUrl: resolveModelUrl(model.optimizedModelUrl, getAppBaseUrl(req)),
       thumbnailUrl: model.thumbnailUrl,
       dimensions: product.dimensionsUnit
         ? {
@@ -47,6 +58,7 @@ router.get("/ar/:token", async (req, res): Promise<void> => {
             unit: product.dimensionsUnit,
           }
         : null,
+      ...(prepared ? { modelNotice: prepared.notice } : {}),
     }),
   );
 });

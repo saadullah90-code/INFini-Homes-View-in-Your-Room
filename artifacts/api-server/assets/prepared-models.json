@@ -1,0 +1,14 @@
+[
+  {
+    "handle": "infini-homes-high-density-foam-premium-white-medical-mattress-200w-x-210l-x-20h",
+    "objectPath": "product-models/infini-medical-mattress-200x210x20-v1.glb",
+    "fileSizeBytes": 809224,
+    "dimensions": {
+      "width": 200,
+      "height": 20,
+      "depth": 210,
+      "unit": "cm"
+    },
+    "notice": "Size-based 3D approximation, not a product scan. Modeled size: 200 W × 210 L × 20 H cm. Other sizes and exact fabric details are not represented."
+  }
+]

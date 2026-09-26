@@ -12,6 +12,7 @@ import shopifyWebhooksRouter from "./shopify-webhooks";
 import storefrontRouter from "./storefront";
 import liquidSourceRouter from "./liquid-source";
 import publicCatalogRouter from "./public-catalog";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(shopifyWebhooksRouter);
 router.use(storefrontRouter);
 router.use(liquidSourceRouter);
 router.use(publicCatalogRouter);
+router.use(storageRouter);
 
 export default router;

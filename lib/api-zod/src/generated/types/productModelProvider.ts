@@ -12,4 +12,5 @@ export type ProductModelProvider = typeof ProductModelProvider[keyof typeof Prod
 export const ProductModelProvider = {
   mock: 'mock',
   meshy: 'meshy',
+  prepared: 'prepared',
 } as const;

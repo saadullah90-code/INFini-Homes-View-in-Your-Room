@@ -28,6 +28,8 @@ tags:
     description: Public, shop-restricted read-only storefront lookup
   - name: admin
     description: Internal admin-dashboard-only helper endpoints
+  - name: storage
+    description: Public App Storage asset serving
 paths:
   /healthz:
     get:
@@ -128,7 +130,7 @@ paths:
     post:
       operationId: generateModel
       tags: [models]
-      summary: Queue a generation job for a model (mock provider unless live generation is explicitly enabled)
+      summary: Assign a verified prepared GLB for a real product; samples use mock demo assets only
       parameters:
         - $ref: "#/components/parameters/ModelId"
       requestBody:
@@ -148,6 +150,28 @@ paths:
           description: Confirmation required or product ineligible
         "404":
           description: Not found
+        "409":
+          description: No registered prepared asset, missing object, or incompatible status
+
+  /storage/public-objects/{objectPath}:
+    get:
+      operationId: getPublicObject
+      tags: [storage]
+      summary: Stream a public App Storage object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema: { type: string }
+          description: Relative public path such as product-models/model.glb; path may contain slashes.
+      responses:
+        "200":
+          description: Public binary asset
+          content:
+            model/gltf-binary:
+              schema: { type: string, format: binary }
+        "404":
+          description: Object not found
 
   /models/{id}/approve:
     post:
@@ -563,7 +587,7 @@ components:
             ]
         provider:
           type: string
-          enum: [mock, meshy]
+          enum: [mock, meshy, prepared]
         providerTaskId: { type: ["string", "null"] }
         originalModelUrl: { type: ["string", "null"] }
         optimizedModelUrl: { type: ["string", "null"] }
@@ -623,7 +647,7 @@ components:
           enum: [PENDING, PROCESSING, GENERATED, FAILED, CANCELLED]
         provider:
           type: string
-          enum: [mock, meshy]
+          enum: [mock, meshy, prepared]
         attempt: { type: integer }
         maxAttempts: { type: integer }
         lastError: { type: ["string", "null"] }
@@ -721,6 +745,7 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ProductDimensions"
             - type: "null"
+        modelNotice: { type: string }
       required:
         - productTitle
         - modelUrl
@@ -749,6 +774,11 @@ components:
         modelUrl: { type: string }
         thumbnailUrl: { type: ["string", "null"] }
         arUrl: { type: string }
+        dimensions:
+          oneOf:
+            - $ref: "#/components/schemas/ProductDimensions"
+            - type: "null"
+        modelNotice: { type: string }
       required:
         - available
 

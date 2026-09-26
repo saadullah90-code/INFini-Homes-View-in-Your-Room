@@ -90,6 +90,7 @@ export type ProductModelProvider = typeof ProductModelProvider[keyof typeof Prod
 export const ProductModelProvider = {
   mock: 'mock',
   meshy: 'meshy',
+  prepared: 'prepared',
 } as const;
 
 export interface ProductModel {
@@ -157,6 +158,7 @@ export type GenerationJobProvider = typeof GenerationJobProvider[keyof typeof Ge
 export const GenerationJobProvider = {
   mock: 'mock',
   meshy: 'meshy',
+  prepared: 'prepared',
 } as const;
 
 export interface GenerationJob {
@@ -257,6 +259,7 @@ export interface ArExperience {
   /** @nullable */
   thumbnailUrl?: string | null;
   dimensions?: ProductDimensions | null;
+  modelNotice?: string;
 }
 
 /**
@@ -278,6 +281,8 @@ export interface StorefrontModel {
   /** @nullable */
   thumbnailUrl?: string | null;
   arUrl?: string;
+  dimensions?: ProductDimensions | null;
+  modelNotice?: string;
 }
 
 /**

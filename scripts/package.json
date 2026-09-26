@@ -5,10 +5,21 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "prepare:mattress": "node ./src/prepare-mattress.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
+    "@google-cloud/storage": "^8.2.0",
+    "draco3dgltf": "^1.5.7",
+    "meshoptimizer": "^1.2.0",
+    "sharp": "^0.35.4",
+    "three": "^0.186.1"
   }
 }

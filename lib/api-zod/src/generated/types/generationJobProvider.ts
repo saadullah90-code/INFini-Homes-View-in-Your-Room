@@ -12,4 +12,5 @@ export type GenerationJobProvider = typeof GenerationJobProvider[keyof typeof Ge
 export const GenerationJobProvider = {
   mock: 'mock',
   meshy: 'meshy',
+  prepared: 'prepared',
 } as const;

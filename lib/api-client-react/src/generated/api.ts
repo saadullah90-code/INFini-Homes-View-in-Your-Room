@@ -538,7 +538,7 @@ export const getGenerateModelUrl = (id: number,) => {
 }
 
 /**
- * @summary Queue a generation job for a model (mock provider unless live generation is explicitly enabled)
+ * @summary Assign a verified prepared GLB for a real product; samples use mock demo assets only
  */
 export const generateModel = async (id: number,
     generateModelRequest: GenerateModelRequest, options?: Parameters<typeof customFetch>[1]): Promise<ProductModel> => {
@@ -605,7 +605,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GenerateModelMutationVariables = {id: number;data: BodyType<GenerateModelRequest>}
 
     /**
- * @summary Queue a generation job for a model (mock provider unless live generation is explicitly enabled)
+ * @summary Assign a verified prepared GLB for a real product; samples use mock demo assets only
  */
 export const useGenerateModel = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateModel>>, TError,GenerateModelMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -617,6 +617,83 @@ export const useGenerateModel = <TError = ErrorType<void>,
       > => {
       return useMutation(getGenerateModelMutationOptions(options));
     }
+
+export const getGetPublicObjectUrl = (objectPath: string,) => {
+
+
+
+
+  return `/api/storage/public-objects/${objectPath}`
+}
+
+/**
+ * @summary Stream a public App Storage object
+ */
+export const getPublicObject = async (objectPath: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicObjectUrl(objectPath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicObjectQueryKey = (objectPath: string,) => {
+    return [
+    `/api/storage/public-objects/${objectPath}`
+    ] as const;
+    }
+
+
+export const getGetPublicObjectQueryOptions = <TData = Awaited<ReturnType<typeof getPublicObject>>, TError = ErrorType<void>>(objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicObjectQueryKey(objectPath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicObject>>> = ({ signal }) => getPublicObject(objectPath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: objectPath !== null && objectPath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicObject>>>
+export type GetPublicObjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Stream a public App Storage object
+ */
+
+export function useGetPublicObject<TData = Awaited<ReturnType<typeof getPublicObject>>, TError = ErrorType<void>>(
+ objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicObjectQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getApproveModelUrl = (id: number,) => {
 
