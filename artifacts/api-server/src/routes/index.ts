@@ -9,6 +9,7 @@ import logsRouter from "./logs";
 import arRouter from "./ar";
 import shopifyAuthRouter from "./shopify-auth";
 import shopifyWebhooksRouter from "./shopify-webhooks";
+import storefrontRouter from "./storefront";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(logsRouter);
 router.use(arRouter);
 router.use(shopifyAuthRouter);
 router.use(shopifyWebhooksRouter);
+router.use(storefrontRouter);
 
 export default router;

@@ -436,3 +436,22 @@ export const GetArExperienceResponse = zod.object({
 })
 
 
+/**
+ * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state -- only whether a published model exists and, if so, its public viewer URLs.
+ * @summary Public, shop-restricted lookup of a product's published 3D/AR model
+ */
+export const GetStorefrontModelQueryParams = zod.object({
+  "shop": zod.coerce.string(),
+  "product_handle": zod.coerce.string()
+})
+
+export const GetStorefrontModelResponse = zod.object({
+  "available": zod.boolean(),
+  "productHandle": zod.string().optional(),
+  "title": zod.string().optional(),
+  "modelUrl": zod.string().optional(),
+  "thumbnailUrl": zod.string().nullish(),
+  "arUrl": zod.string().optional()
+}).describe('Only ever contains public, already-published data. `available: false` carries no other fields.\n')
+
+

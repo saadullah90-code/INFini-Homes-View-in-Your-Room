@@ -25,13 +25,15 @@ import type {
   ArExperience,
   GenerateModelRequest,
   GenerationJob,
+  GetStorefrontModelParams,
   HealthStatus,
   LogEntry,
   Product,
   ProductModel,
   ReviewApproveRequest,
   ReviewRejectRequest,
-  SettingsUpdate
+  SettingsUpdate,
+  StorefrontModel
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1397,6 +1399,91 @@ export function useGetArExperience<TData = Awaited<ReturnType<typeof getArExperi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetArExperienceQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStorefrontModelUrl = (params: GetStorefrontModelParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/storefront/model?${stringifiedParams}` : `/api/storefront/model`
+}
+
+/**
+ * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state -- only whether a published model exists and, if so, its public viewer URLs.
+ * @summary Public, shop-restricted lookup of a product's published 3D/AR model
+ */
+export const getStorefrontModel = async (params: GetStorefrontModelParams, options?: Parameters<typeof customFetch>[1]): Promise<StorefrontModel> => {
+
+  return customFetch<StorefrontModel>(getGetStorefrontModelUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorefrontModelQueryKey = (params?: GetStorefrontModelParams,) => {
+    return [
+    `/api/storefront/model`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetStorefrontModelQueryOptions = <TData = Awaited<ReturnType<typeof getStorefrontModel>>, TError = ErrorType<void>>(params: GetStorefrontModelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontModel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorefrontModelQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorefrontModel>>> = ({ signal }) => getStorefrontModel(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorefrontModel>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorefrontModelQueryResult = NonNullable<Awaited<ReturnType<typeof getStorefrontModel>>>
+export type GetStorefrontModelQueryError = ErrorType<void>
+
+
+/**
+ * @summary Public, shop-restricted lookup of a product's published 3D/AR model
+ */
+
+export function useGetStorefrontModel<TData = Awaited<ReturnType<typeof getStorefrontModel>>, TError = ErrorType<void>>(
+ params: GetStorefrontModelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontModel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorefrontModelQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

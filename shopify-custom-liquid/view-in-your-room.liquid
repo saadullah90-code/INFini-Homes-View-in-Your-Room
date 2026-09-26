@@ -1,0 +1,391 @@
+{% comment %}
+  INFini Homes — "View in Your Room" (Custom Liquid, single-file)
+  =================================================================
+  Paste this ENTIRE file into: Shopify Admin → Online Store → Themes →
+  Customize → Product template → Add block/section → Custom Liquid → Save.
+
+  Nothing else needs editing except the one config line below when the
+  backend moves from Replit to Railway.
+
+  What this does NOT do (by design):
+  - Does not modify product images, gallery, price, variants, or Add to Cart.
+  - Does not embed any Shopify or Meshy secret/token/API key.
+  - Does not assume a model exists -- the backend is the sole source of
+    truth for eligibility, model status, and publish state.
+  - Does not fabricate a USDZ/iOS AR asset -- if the backend has none, the
+    iOS "Quick Look" AR path is simply not offered, and the 3D viewer
+    still works normally.
+{% endcomment %}
+
+<div
+  class="viyr-root"
+  id="viyr-root-{{ product.id }}"
+  data-viyr-instance
+  data-product-handle="{{ product.handle }}"
+  data-product-url="{{ product.url | within: collection }}"
+  data-shop-domain="{{ shop.permanent_domain }}"
+  data-shop-storefront-domain="{{ request.host }}"
+>
+  <button type="button" class="viyr-button" data-viyr-open hidden>
+    <svg class="viyr-button__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path fill="currentColor" d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.5 3.6-6.5 3.6-6.5-3.6L12 4.3ZM5 9.6l6 3.3v7.1l-6-3.3V9.6Zm8 10.4v-7.1l6-3.3v7.1l-6 3.3Z"/>
+    </svg>
+    <span>View in Your Room</span>
+  </button>
+
+  <div class="viyr-modal" data-viyr-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="View in Your Room">
+    <div class="viyr-modal__backdrop" data-viyr-close></div>
+    <div class="viyr-modal__panel">
+      <button type="button" class="viyr-modal__close" data-viyr-close aria-label="Close">&times;</button>
+
+      <div class="viyr-modal__body">
+        <div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
+          <div class="viyr-state viyr-state--loading" data-viyr-loading>
+            <div class="viyr-spinner" aria-hidden="true"></div>
+            <p>Loading 3D model…</p>
+          </div>
+          <div class="viyr-state viyr-state--error" data-viyr-error hidden>
+            <p>We couldn't load the 3D model right now. Please try again in a moment.</p>
+          </div>
+          <!-- <model-viewer> is inserted here by JS once the script has loaded and a model is confirmed available. -->
+        </div>
+
+        <div class="viyr-side">
+          <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
+          <p class="viyr-side__hint">Drag to rotate &middot; Pinch or scroll to zoom</p>
+
+          <button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden>
+            View in your space (AR)
+          </button>
+          <p class="viyr-ar-note" data-viyr-ar-note hidden></p>
+
+          <div class="viyr-qr" data-viyr-qr-wrap hidden>
+            <p class="viyr-qr__label">Scan with your phone for AR</p>
+            <div data-viyr-qr-canvas class="viyr-qr__canvas"></div>
+            <p class="viyr-qr__fallback" data-viyr-qr-fallback hidden>
+              QR code unavailable — open this page on your phone instead.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Isolated namespace: every rule is scoped under .viyr-*, nothing here
+     targets Shopify theme elements (body, html, h1, button, img, etc.)
+     directly, so it cannot bleed into the rest of the theme. */
+  .viyr-root { all: initial; display: block; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .viyr-root *, .viyr-root *::before, .viyr-root *::after { box-sizing: border-box; }
+
+  .viyr-button {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin: 12px 0; padding: 12px 20px;
+    background: #111827; color: #ffffff; border: none; border-radius: 999px;
+    font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .viyr-button:hover { background: #1f2937; }
+  .viyr-button:active { transform: scale(0.98); }
+  .viyr-button__icon { flex: none; }
+
+  .viyr-modal {
+    position: fixed; inset: 0; z-index: 2147483000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .viyr-modal[hidden] { display: none; }
+  .viyr-modal__backdrop {
+    position: absolute; inset: 0; background: rgba(17, 24, 39, 0.6);
+  }
+  .viyr-modal__panel {
+    position: relative; z-index: 1;
+    width: min(920px, 94vw); max-height: 90vh; overflow: hidden;
+    background: #ffffff; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column;
+  }
+  .viyr-modal__close {
+    position: absolute; top: 10px; right: 12px; z-index: 2;
+    width: 36px; height: 36px; border-radius: 999px; border: none;
+    background: rgba(255,255,255,0.9); color: #111827;
+    font-size: 22px; line-height: 1; cursor: pointer;
+  }
+  .viyr-modal__body {
+    display: flex; flex-direction: column; height: 100%;
+  }
+  @media (min-width: 720px) {
+    .viyr-modal__body { flex-direction: row; }
+  }
+
+  .viyr-viewer-wrap {
+    position: relative; flex: 1 1 60%;
+    min-height: 320px; background: #f3f4f6;
+  }
+  .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
+
+  .viyr-state {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    color: #4b5563; font-size: 14px; text-align: center; padding: 20px;
+  }
+  .viyr-state[hidden] { display: none; }
+  .viyr-spinner {
+    width: 32px; height: 32px; border-radius: 999px;
+    border: 3px solid #e5e7eb; border-top-color: #111827;
+    animation: viyr-spin 0.8s linear infinite;
+  }
+  @keyframes viyr-spin { to { transform: rotate(360deg); } }
+
+  .viyr-side {
+    flex: 1 1 40%; padding: 20px 24px 24px; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .viyr-side__title { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: #111827; }
+  .viyr-side__hint { margin: 0 0 16px; font-size: 13px; color: #6b7280; }
+
+  .viyr-ar-btn {
+    margin: 4px 0 6px; padding: 12px 16px; border: none; border-radius: 10px;
+    background: #111827; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .viyr-ar-btn:hover { background: #1f2937; }
+  .viyr-ar-btn[hidden] { display: none; }
+  .viyr-ar-note { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
+  .viyr-ar-note[hidden] { display: none; }
+
+  .viyr-qr { margin-top: auto; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+  .viyr-qr[hidden] { display: none; }
+  .viyr-qr__label { font-size: 13px; color: #374151; margin: 0 0 10px; font-weight: 600; }
+  .viyr-qr__canvas { display: inline-block; line-height: 0; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .viyr-qr__fallback { font-size: 12px; color: #6b7280; }
+  .viyr-qr__fallback[hidden] { display: none; }
+
+  @media (max-width: 719px) {
+    .viyr-modal__panel { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
+    .viyr-viewer-wrap { flex: 1 1 55%; }
+    .viyr-side { flex: 1 1 45%; }
+  }
+</style>
+
+<script>
+(function () {
+  // =========================================================================
+  // SINGLE CONFIGURATION VALUE — this is the only thing to change when the
+  // backend moves from Replit to Railway (or any other host). Everything
+  // else in this file adapts automatically.
+  // =========================================================================
+  const VIEW_IN_YOUR_ROOM_API = "https://22a9ae4d-ce01-4ecf-8256-285c64105e6d-00-1e8puxyeezg0r.sisko.replit.dev";
+  // =========================================================================
+
+  const STOREFRONT_ENDPOINT = VIEW_IN_YOUR_ROOM_API.replace(/\/$/, "") + "/api/storefront/model";
+  const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
+  const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
+
+  // Prevent duplicate rendering if this Custom Liquid block is accidentally
+  // added to the template twice -- only the first instance on the page runs.
+  if (window.__viyrInitialized) return;
+  window.__viyrInitialized = true;
+
+  const root = document.currentScript ? document.currentScript.closest(".viyr-root") : document.querySelector(".viyr-root[data-viyr-instance]");
+  if (!root) return;
+
+  const productHandle = root.dataset.productHandle;
+  const shopStorefrontDomain = root.dataset.shopStorefrontDomain || window.location.hostname;
+
+  const els = {
+    button: root.querySelector("[data-viyr-open]"),
+    modal: root.querySelector("[data-viyr-modal]"),
+    closeBtns: root.querySelectorAll("[data-viyr-close]"),
+    viewerWrap: root.querySelector("[data-viyr-viewer-wrap]"),
+    loading: root.querySelector("[data-viyr-loading]"),
+    error: root.querySelector("[data-viyr-error]"),
+    title: root.querySelector("[data-viyr-title]"),
+    arBtn: root.querySelector("[data-viyr-ar-btn]"),
+    arNote: root.querySelector("[data-viyr-ar-note]"),
+    qrWrap: root.querySelector("[data-viyr-qr-wrap]"),
+    qrCanvas: root.querySelector("[data-viyr-qr-canvas]"),
+    qrFallback: root.querySelector("[data-viyr-qr-fallback]"),
+  };
+
+  let modelData = null; // populated once the backend confirms a published model
+  let modelViewerLoadPromise = null;
+  let modelViewerEl = null;
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-viyr-loaded="' + src + '"]');
+      if (existing) { resolve(); return; }
+      const s = document.createElement("script");
+      s.src = src;
+      s.type = "module";
+      s.setAttribute("data-viyr-loaded", src);
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+  function isIOS() {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  async function fetchModelAvailability() {
+    const url = STOREFRONT_ENDPOINT
+      + "?shop=" + encodeURIComponent(shopStorefrontDomain)
+      + "&product_handle=" + encodeURIComponent(productHandle);
+
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Storefront API returned " + res.status);
+    const data = await res.json();
+    if (typeof data.available !== "boolean") throw new Error("Invalid storefront API response");
+    return data;
+  }
+
+  async function initAvailability() {
+    try {
+      const data = await fetchModelAvailability();
+      if (data.available) {
+        modelData = data;
+        els.button.hidden = false;
+
+        // Mobile auto-AR: only ever triggered when a published model is
+        // confirmed to exist -- never opens anything speculative.
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("view_ar") === "1") {
+          openModal();
+        }
+      }
+    } catch (err) {
+      // Backend unavailable / invalid response: fail closed -- no button,
+      // no broken UI, nothing shown to the customer.
+      console.warn("[View in Your Room] availability check failed:", err);
+    }
+  }
+
+  async function ensureModelViewer() {
+    if (!modelViewerLoadPromise) {
+      modelViewerLoadPromise = loadScriptOnce(MODEL_VIEWER_SRC);
+    }
+    return modelViewerLoadPromise;
+  }
+
+  function buildModelViewer() {
+    const mv = document.createElement("model-viewer");
+    mv.setAttribute("src", modelData.modelUrl);
+    mv.setAttribute("camera-controls", "");
+    mv.setAttribute("touch-action", "pan-y");
+    mv.setAttribute("interaction-prompt", "auto");
+    if (modelData.thumbnailUrl) mv.setAttribute("poster", modelData.thumbnailUrl);
+    mv.setAttribute("shadow-intensity", "1");
+    // No USDZ asset exists yet in the backend today; only advertise the AR
+    // modes model-viewer can actually deliver on right now (WebXR / Scene
+    // Viewer on Android via the GLB). iOS Quick Look needs `ios-src` with a
+    // real USDZ URL -- omitted deliberately rather than pointing at a GLB
+    // (which Quick Look cannot open) or a fake URL.
+    mv.setAttribute("ar", "");
+    mv.setAttribute("ar-modes", "webxr scene-viewer");
+    mv.addEventListener("error", onViewerError);
+    mv.addEventListener("load", onViewerLoad);
+    return mv;
+  }
+
+  function onViewerLoad() {
+    els.loading.hidden = true;
+    els.error.hidden = true;
+  }
+
+  function onViewerError() {
+    els.loading.hidden = true;
+    els.error.hidden = false;
+  }
+
+  function setupArButton() {
+    if (isMobileDevice()) {
+      // Android: model-viewer's own built-in AR button (rendered via the
+      // `ar` attribute) handles WebXR/Scene Viewer. iOS: no USDZ pipeline
+      // exists yet, so Quick Look cannot be offered -- say so plainly
+      // instead of showing a button that would fail.
+      if (isIOS()) {
+        els.arBtn.hidden = true;
+        els.arNote.hidden = false;
+        els.arNote.textContent = "AR view for iPhone/iPad isn't available for this product yet.";
+      } else {
+        els.arBtn.hidden = true; // model-viewer shows its own native AR affordance on Android
+      }
+      els.qrWrap.hidden = true;
+    } else {
+      // Desktop: no in-page AR is possible, so show a QR code the shopper
+      // scans to continue on their phone.
+      els.arBtn.hidden = true;
+      renderDesktopQr();
+    }
+  }
+
+  function renderDesktopQr() {
+    const productUrl = new URL(root.dataset.productUrl || window.location.pathname, window.location.origin);
+    productUrl.searchParams.set("view_ar", "1");
+    const qrTarget = productUrl.toString();
+
+    loadScriptOnce(QRCODE_LIB_SRC)
+      .then(() => {
+        if (!window.QRCode || !window.QRCode.toCanvas) throw new Error("QRCode library unavailable");
+        const canvas = document.createElement("canvas");
+        window.QRCode.toCanvas(canvas, qrTarget, { width: 160, margin: 1 }, (err) => {
+          if (err) { showQrFallback(); return; }
+          els.qrCanvas.innerHTML = "";
+          els.qrCanvas.appendChild(canvas);
+          els.qrWrap.hidden = false;
+        });
+      })
+      .catch(() => showQrFallback());
+  }
+
+  function showQrFallback() {
+    els.qrWrap.hidden = false;
+    els.qrCanvas.innerHTML = "";
+    els.qrFallback.hidden = false;
+  }
+
+  async function openModal() {
+    if (!modelData) return; // safety net: never open without a confirmed model
+
+    els.modal.hidden = false;
+    els.modal.setAttribute("aria-hidden", "false");
+    els.title.textContent = modelData.title || "";
+    els.loading.hidden = false;
+    els.error.hidden = true;
+    document.body.style.overflow = "hidden";
+
+    if (!modelViewerEl) {
+      try {
+        await ensureModelViewer();
+        modelViewerEl = buildModelViewer();
+        els.viewerWrap.appendChild(modelViewerEl);
+      } catch (err) {
+        console.warn("[View in Your Room] model-viewer failed to load:", err);
+        onViewerError();
+        return;
+      }
+    }
+
+    setupArButton();
+  }
+
+  function closeModal() {
+    els.modal.hidden = true;
+    els.modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  els.button.addEventListener("click", openModal);
+  els.closeBtns.forEach((btn) => btn.addEventListener("click", closeModal));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !els.modal.hidden) closeModal();
+  });
+
+  initAvailability();
+})();
+</script>

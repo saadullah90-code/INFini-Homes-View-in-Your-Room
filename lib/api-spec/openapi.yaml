@@ -24,6 +24,8 @@ tags:
     description: Webhook and system event log
   - name: ar
     description: Public AR/3D viewer lookup
+  - name: storefront
+    description: Public, shop-restricted read-only storefront lookup
 paths:
   /healthz:
     get:
@@ -327,6 +329,39 @@ paths:
         "404":
           description: Invalid, expired, or unpublished token
 
+  /storefront/model:
+    get:
+      operationId: getStorefrontModel
+      tags: [storefront]
+      summary: Public, shop-restricted lookup of a product's published 3D/AR model
+      description: >
+        Read-only. Restricted to an allowlisted shop origin. Never exposes
+        Shopify or Meshy credentials, database identifiers, or internal
+        generation-pipeline state -- only whether a published model exists
+        and, if so, its public viewer URLs.
+      parameters:
+        - name: shop
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: product_handle
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Storefront model availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontModel"
+        "400":
+          description: Missing or invalid shop/product_handle
+        "403":
+          description: Shop is not on the storefront allowlist
+
 components:
   parameters:
     ProductId:
@@ -587,3 +622,18 @@ components:
       required:
         - productTitle
         - modelUrl
+
+    StorefrontModel:
+      type: object
+      description: >
+        Only ever contains public, already-published data. `available: false`
+        carries no other fields.
+      properties:
+        available: { type: boolean }
+        productHandle: { type: string }
+        title: { type: string }
+        modelUrl: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        arUrl: { type: string }
+      required:
+        - available

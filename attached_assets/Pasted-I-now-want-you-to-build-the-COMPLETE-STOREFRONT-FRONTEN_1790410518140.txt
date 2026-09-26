@@ -1,0 +1,457 @@
+I now want you to build the COMPLETE STOREFRONT FRONTEND INTEGRATION, not just a small API endpoint.
+
+The goal is very specific:
+
+I want the entire customer-facing "View in Your Room" frontend to exist inside this project as ONE COPY-PASTE-READY SHOPIFY CUSTOM LIQUID FILE.
+
+The final user workflow must be:
+
+SHOPIFY PRODUCT PAGE
+→ Shopify Custom Liquid block
+→ paste ONE complete code file
+→ save
+→ "View in Your Room" button works
+→ frontend connects to Replit backend
+→ published 3D model loads
+→ customer can view/rotate/zoom
+→ AR works where supported
+→ desktop shows QR for mobile AR
+→ mobile can launch AR
+
+The user should NOT have to manually combine separate HTML, CSS, JavaScript files.
+
+==================================================
+IMPORTANT — DO NOT CHANGE EXISTING ARCHITECTURE
+==================================================
+
+Preserve all existing work.
+
+DO NOT:
+- delete existing backend
+- rewrite existing backend
+- rewrite database
+- remove admin dashboard
+- remove existing generation workflow
+- remove existing /ar/:token route
+- modify eligibility logic
+- modify Shopify OAuth
+- modify Shopify distribution
+- modify Shopify scopes
+- modify Shopify credentials
+- modify Shopify webhooks
+- modify existing Shopify products
+- modify existing product images
+- start real Meshy generation
+- call Meshy
+- spend Meshy credits
+- create bulk generation jobs
+
+MESHY MUST REMAIN BLOCKED.
+
+The existing Replit backend remains the backend for now.
+
+Railway migration will happen later after the application is complete and tested.
+
+==================================================
+FRONTEND DELIVERABLE
+==================================================
+
+Create:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+This must be a SINGLE COMPLETE COPY-PASTE-READY FILE.
+
+It must contain all required:
+
+- Liquid
+- HTML
+- CSS
+- JavaScript
+
+inside the same file.
+
+The user should be able to:
+
+Shopify Admin
+→ Online Store
+→ Themes
+→ Customize
+→ Product page
+→ Add Custom Liquid
+→ paste the entire contents of view-in-your-room.liquid
+→ Save
+
+No second code file should be required.
+
+==================================================
+BACKEND CONNECTION
+==================================================
+
+The frontend must connect to the existing Replit backend.
+
+Use ONE clearly visible configuration variable at the very top of the Liquid/JavaScript code, for example:
+
+const VIEW_IN_YOUR_ROOM_API =
+  "https://CURRENT-REPLIT-BACKEND-URL";
+
+Do NOT put any secret/API key/token in this frontend.
+
+The backend URL must be the only configuration the user may need to change later when moving from Replit to Railway.
+
+Do not require editing multiple URLs throughout the code.
+
+==================================================
+SHOPIFY PRODUCT DETECTION
+==================================================
+
+The Custom Liquid code must automatically detect the current product using Shopify Liquid.
+
+Use the current product's:
+
+- product.id
+- product.handle
+- product.title
+- product.url
+- product.type
+- product.vendor
+
+The frontend must work on the Shopify product template without requiring the merchant to manually enter a product ID.
+
+==================================================
+MODEL LOOKUP
+==================================================
+
+The frontend should request the current product's published model from:
+
+GET /api/storefront/model
+
+using the product handle.
+
+Example:
+
+/api/storefront/model?shop=infinihomes.shop&product_handle={{ product.handle }}
+
+The backend remains authoritative.
+
+If:
+
+available === false
+
+DO NOT show the View in Your Room button.
+
+If:
+
+available === true
+
+show the button.
+
+==================================================
+BUTTON
+==================================================
+
+Create a professional:
+
+"View in Your Room"
+
+button.
+
+It must:
+
+- be responsive
+- look professional
+- work with desktop and mobile
+- use an isolated CSS namespace
+- not modify Shopify's global styles
+- not modify existing product buttons
+- not modify Add to Cart
+- not modify product gallery
+- not modify product images
+
+Prevent duplicate rendering if the Custom Liquid block is accidentally added twice.
+
+==================================================
+3D VIEWER
+==================================================
+
+Use <model-viewer>.
+
+Load the required model-viewer library safely.
+
+Support:
+
+- GLB
+- camera controls
+- zoom
+- rotate
+- fullscreen
+- AR where supported
+
+The viewer should open inside a professional modal.
+
+The modal must contain:
+
+- product/model viewer
+- close button
+- AR button where supported
+- QR code on desktop
+- helpful loading state
+- error state
+
+Do not use fake model URLs.
+
+Use the modelUrl returned by the Replit backend.
+
+==================================================
+AR
+==================================================
+
+Support:
+
+Android:
+- WebXR where available
+- Scene Viewer fallback where supported
+
+iOS:
+- Quick Look when a valid USDZ exists
+
+IMPORTANT:
+
+There is currently NO real USDZ pipeline.
+
+Do NOT create fake USDZ URLs.
+
+If the backend response does not contain a valid USDZ URL:
+
+- keep 3D viewer functional
+- do not display a broken iOS AR button
+- clearly handle unsupported AR gracefully
+
+Do not claim iOS AR is complete until a real USDZ asset exists.
+
+==================================================
+DESKTOP QR
+==================================================
+
+On desktop, show a QR code inside the modal.
+
+The QR must point to the same Shopify product page with:
+
+?view_ar=1
+
+Example:
+
+https://infinihomes.shop/products/PRODUCT-HANDLE?view_ar=1
+
+Do not put secrets into the QR code.
+
+Do not put Meshy credentials or backend secrets into the QR code.
+
+Use a reliable client-side QR generation method that can be included in the single Custom Liquid file.
+
+If an external library is needed, load only a trusted public library and handle failure gracefully.
+
+==================================================
+MOBILE AUTO AR
+==================================================
+
+If the current URL contains:
+
+?view_ar=1
+
+then, after verifying that a published model exists, automatically open the View in Your Room experience.
+
+Do not automatically open anything if no published model exists.
+
+==================================================
+LOADING / ERROR STATES
+==================================================
+
+The frontend must handle:
+
+1. API loading
+2. No model available
+3. Backend unavailable
+4. Invalid response
+5. Model loading failure
+6. AR unsupported
+7. QR generation failure
+
+Do not leave an empty button or broken modal.
+
+==================================================
+SECURITY
+==================================================
+
+Everything in Custom Liquid is public.
+
+Therefore NEVER expose:
+
+- Shopify API secret
+- Shopify access token
+- Meshy API key
+- database password
+- session secret
+- signing secret
+- admin credentials
+
+Only public model information may reach the browser.
+
+==================================================
+BACKEND
+==================================================
+
+Create the minimum required backend endpoint:
+
+GET /api/storefront/model
+
+It should:
+
+- accept shop
+- accept product_handle
+- allow only:
+  infinihomes.shop
+  www.infinihomes.shop
+
+- find the existing product
+- verify eligible=true
+- verify a product model exists
+- verify status=PUBLISHED
+- verify optimizedModelUrl exists
+
+If not published:
+
+{
+  "available": false
+}
+
+If published:
+
+{
+  "available": true,
+  "productHandle": "...",
+  "title": "...",
+  "modelUrl": "...",
+  "thumbnailUrl": "...",
+  "arUrl": "..."
+}
+
+If a valid USDZ URL does not exist, DO NOT invent one.
+
+Only add the minimum API code necessary for the frontend.
+
+Do NOT add automatic product registration.
+
+Do NOT add automatic generation.
+
+Do NOT add stale model logic.
+
+Do NOT add new database states.
+
+==================================================
+EXISTING AR ROUTE
+==================================================
+
+Reuse the existing published arToken and existing:
+
+/api/ar/:token
+
+Do not rewrite that route.
+
+==================================================
+TESTING
+==================================================
+
+Before reporting completion, test:
+
+1. Custom Liquid renders.
+2. Product handle is correctly detected.
+3. Backend request is correctly formed.
+4. Published model returns correctly.
+5. No published model hides the button.
+6. Modal opens.
+7. GLB loads.
+8. Rotate works.
+9. Zoom works.
+10. Close works.
+11. Desktop QR renders.
+12. QR URL points to the correct Shopify product.
+13. ?view_ar=1 opens the experience.
+14. Mobile layout works.
+15. Unsupported AR is handled gracefully.
+16. Duplicate Custom Liquid block does not create duplicate UI.
+17. Existing Shopify product image is unchanged.
+18. Existing Add to Cart is unchanged.
+19. Existing admin dashboard still works.
+20. No Meshy request was made.
+21. No Meshy credits were consumed.
+22. No Shopify OAuth/configuration was changed.
+
+==================================================
+RAILWAY COMPATIBILITY
+==================================================
+
+The frontend must NOT depend on Replit-specific functionality.
+
+The backend should be normal Node/Express/Postgres architecture.
+
+Later, when moving to Railway, changing the single backend URL configuration must be sufficient for the Custom Liquid frontend.
+
+==================================================
+DOCUMENTATION
+==================================================
+
+Create:
+
+shopify-custom-liquid/README.md
+
+with simple Roman Urdu/English instructions:
+
+1. Shopify Admin kholo.
+2. Online Store → Themes → Customize.
+3. Product template kholo.
+4. Custom Liquid add karo.
+5. view-in-your-room.liquid ka complete code paste karo.
+6. Save karo.
+7. Eligible product open karo.
+8. View in Your Room button test karo.
+9. Desktop QR test karo.
+10. Mobile test karo.
+
+Also clearly explain:
+
+- Real Meshy generation is not enabled yet.
+- A published model is required for the button.
+- USDZ/iOS AR is not considered complete until a real USDZ asset exists.
+- Replit is currently the backend.
+- Railway migration will happen later.
+
+==================================================
+VERY IMPORTANT
+==================================================
+
+Do not just provide a design.
+
+Actually create the complete copy-paste-ready frontend file and the minimum backend endpoint needed for it.
+
+But before modifying files, first inspect the existing files that will be affected and confirm the exact files you will change.
+
+Then implement only this scope.
+
+After implementation report:
+
+A. Exact files created
+B. Exact files modified
+C. Exact files untouched
+D. Tests performed
+E. Tests passed
+F. Tests failed
+G. Meshy status
+H. Shopify configuration status
+I. Exact Custom Liquid file location
+J. Exact backend URL currently used
+K. Any remaining limitation
+
+Do not claim the app is fully complete if any part is still mocked or unavailable.
+
+STOP after this implementation and report.

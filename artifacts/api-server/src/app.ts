@@ -25,7 +25,19 @@ app.use(
     },
   }),
 );
-app.use(cors());
+// The public storefront endpoint (mounted under /api/storefront) enforces
+// its own, tighter, shop-restricted CORS policy in its route file. It must
+// be excluded here, otherwise this app-wide wildcard CORS would run first,
+// answer every preflight itself, and leave its permissive
+// `Access-Control-Allow-Origin: *` header on every response before the
+// storefront route's own restriction ever gets a chance to apply.
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/storefront")) {
+    next();
+    return;
+  }
+  cors()(req, res, next);
+});
 app.use(
   express.json({
     // Captures the exact raw bytes alongside the parsed body so Shopify

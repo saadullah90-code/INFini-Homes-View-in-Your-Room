@@ -258,3 +258,21 @@ export interface ArExperience {
   dimensions?: ProductDimensions | null;
 }
 
+/**
+ * Only ever contains public, already-published data. `available: false` carries no other fields.
+ */
+export interface StorefrontModel {
+  available: boolean;
+  productHandle?: string;
+  title?: string;
+  modelUrl?: string;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  arUrl?: string;
+}
+
+export type GetStorefrontModelParams = {
+shop: string;
+product_handle: string;
+};
+
