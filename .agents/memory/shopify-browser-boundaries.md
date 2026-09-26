@@ -13,3 +13,9 @@ Customer-facing QR handoffs must target a verified public deployment or Shopify 
 **Why:** A QR generated in the workspace from location.origin led shoppers to a Replit login page despite the published app being public.
 
 **How to apply:** Verify the deployment URL and visibility before choosing the QR target. Test the destination without account cookies; preview-origin reachability does not establish anonymous customer access.
+
+On iPhone, prefer an explicit, prominent Quick Look action; never promise automatic camera activation or permission bypass.
+
+**Why:** The user confirmed the explicit native AR demo worked, whereas the embedded 3D preview alone was mistaken for the intended room-camera flow.
+
+**How to apply:** Use a real USDZ when available, or disclose conversion limitations when generating USDZ from GLB. A successful sample demo does not verify a different product model or its physical scale.

@@ -12,9 +12,9 @@
   - Does not embed any Shopify or Meshy secret/token/API key.
   - Does not assume a model exists -- the backend is the sole source of
     truth for eligibility, model status, and publish state.
-  - Does not fabricate a USDZ/iOS AR asset -- if the backend has none, the
-    iOS "Quick Look" AR path is simply not offered, and the 3D viewer
-    still works normally.
+  - Does not fabricate a USDZ/iOS AR asset -- model-viewer generates Quick
+    Look's USDZ from the actual published GLB when a supported iOS shopper
+    taps AR. Camera permission and AR launch remain browser-controlled.
 {% endcomment %}
 
 <div
@@ -59,10 +59,10 @@
           <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
           <p class="viyr-side__hint" data-viyr-hint>Drag to rotate &middot; Pinch or scroll to zoom</p>
 
-          <button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden>
+          <button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden disabled>
             View in your space (AR)
           </button>
-          <p class="viyr-ar-note" data-viyr-ar-note hidden></p>
+          <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
 
           <div class="viyr-qr" data-viyr-qr-wrap hidden>
             <p class="viyr-qr__label">Scan with your phone for AR</p>
@@ -171,6 +171,7 @@
     background: #111827; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
   }
   .viyr-ar-btn:hover { background: #1f2937; }
+  .viyr-ar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .viyr-ar-btn[hidden] { display: none; }
   .viyr-ar-note { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
   .viyr-ar-note[hidden] { display: none; }
@@ -184,8 +185,10 @@
 
   @media (max-width: 719px) {
     .viyr-modal__panel { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
-    .viyr-viewer-wrap { flex: 1 1 55%; }
-    .viyr-side { flex: 1 1 45%; }
+    .viyr-modal__body { min-height: 0; }
+    .viyr-viewer-wrap { flex: 1 1 auto; min-height: 240px; }
+    .viyr-side { order: -1; flex: 0 0 auto; padding: 16px 20px 10px; }
+    .viyr-ar-btn { width: 100%; padding: 15px 16px; font-size: 16px; }
   }
 
   .viyr-debug {
@@ -307,6 +310,7 @@
   let availabilityFailed = false;
   let modelViewerLoadPromise = null;
   let modelViewerEl = null;
+  let viewerState = "idle"; // idle | loading | loaded | error
   let viewerTimer = null;
   // Set synchronously (before the first `await` in openModal) so a burst of
   // rapid clicks -- which all run their synchronous prelude before any of
@@ -433,7 +437,7 @@
         throw new Error("Published model response has no model URL");
       }
       availabilityChecking = false;
-      // QR/mobile auto-open only after the published model is confirmed.
+      // QR links can open the 3D modal, never AR/camera without a user tap.
       if ((!els.modal.hidden || (modelData && new URLSearchParams(window.location.search).get("view_ar") === "1"))
         && root.isConnected) openModal();
     } catch (err) {
@@ -450,7 +454,10 @@
 
   async function ensureModelViewer() {
     if (!modelViewerLoadPromise) {
-      modelViewerLoadPromise = loadScriptOnce(MODEL_VIEWER_SRC);
+      modelViewerLoadPromise = loadScriptOnce(MODEL_VIEWER_SRC).catch((err) => {
+        modelViewerLoadPromise = null; // a subsequent modal open can retry
+        throw err;
+      });
     }
     return modelViewerLoadPromise;
   }
@@ -463,49 +470,63 @@
     mv.setAttribute("interaction-prompt", "auto");
     if (modelData.thumbnailUrl) mv.setAttribute("poster", modelData.thumbnailUrl);
     mv.setAttribute("shadow-intensity", "1");
-    // No USDZ asset exists yet in the backend today; only advertise the AR
-    // modes model-viewer can actually deliver on right now (WebXR / Scene
-    // Viewer on Android via the GLB). iOS Quick Look needs `ios-src` with a
-    // real USDZ URL -- omitted deliberately rather than pointing at a GLB
-    // (which Quick Look cannot open) or a fake URL.
+    // With no ios-src, model-viewer 3.5 generates a USDZ for Quick Look
+    // from this *published GLB* on supported iOS devices. No fake asset URL.
     mv.setAttribute("ar", "");
-    mv.setAttribute("ar-modes", "webxr scene-viewer");
+    mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
     mv.addEventListener("error", onViewerError);
     mv.addEventListener("load", onViewerLoad);
+    mv.addEventListener("ar-status", (event) => {
+      if (event.detail && event.detail.status === "failed" && !els.modal.hidden) {
+        showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+      }
+    });
     return mv;
   }
 
   function onViewerLoad() {
     clearTimeout(viewerTimer);
+    viewerState = "loaded";
     els.loading.hidden = true;
     els.error.hidden = true;
+    setupArButton();
   }
 
   function onViewerError() {
     clearTimeout(viewerTimer);
+    viewerState = "error";
     els.loading.hidden = true;
     els.error.hidden = false;
     els.errorMessage.textContent = "We couldn't load the 3D model right now. Please try again in a moment.";
+    setupArButton();
+  }
+
+  function showArNote(message) {
+    els.arNote.textContent = message;
+    els.arNote.hidden = !message;
   }
 
   function setupArButton() {
     if (isMobileDevice()) {
-      // Android: model-viewer's own built-in AR button (rendered via the
-      // `ar` attribute) handles WebXR/Scene Viewer. iOS: no USDZ pipeline
-      // exists yet, so Quick Look cannot be offered -- say so plainly
-      // instead of showing a button that would fail.
-      if (isIOS()) {
-        els.arBtn.hidden = true;
-        els.arNote.hidden = false;
-        els.arNote.textContent = "AR view for iPhone/iPad isn't available for this product yet.";
-      } else {
-        els.arBtn.hidden = true; // model-viewer shows its own native AR affordance on Android
-      }
       els.qrWrap.hidden = true;
+      els.arBtn.hidden = viewerState === "error";
+      els.arBtn.disabled = viewerState !== "loaded" || !modelViewerEl || modelViewerEl.canActivateAR !== true;
+      els.arBtn.textContent = viewerState === "loading" || viewerState === "idle"
+        ? "Preparing AR…" : "View in your space (AR)";
+      showArNote(viewerState === "error"
+        ? "AR needs the 3D model to load first. Please close and reopen to retry."
+        : viewerState !== "loaded"
+        ? "Loading the 3D model before AR is available."
+        : els.arBtn.disabled
+        ? "AR isn't supported in this browser or device. You can still explore the 3D model here."
+        : isIOS()
+        ? "Tap to open Apple's Quick Look. Your browser may ask for camera access."
+        : "Tap to place this product in your room. Your browser may ask for camera access.");
     } else {
       // Desktop: no in-page AR is possible, so show a QR code the shopper
       // scans to continue on their phone.
       els.arBtn.hidden = true;
+      showArNote("");
       renderDesktopQr();
     }
   }
@@ -536,11 +557,17 @@
   async function openModal() {
     if (!modelData && !eligible) return;
 
+    if (viewerState === "error" && modelViewerEl) {
+      modelViewerEl.remove();
+      modelViewerEl = null;
+      modelViewerBuildStarted = false;
+      viewerState = "idle";
+    }
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
     els.title.textContent = (modelData && modelData.title) || productTitle;
     els.hint.hidden = !modelData;
-    els.loading.hidden = !!modelViewerEl || !modelData;
+    els.loading.hidden = !modelData || viewerState !== "idle" && viewerState !== "loading";
     els.error.hidden = !!modelData;
     els.arBtn.hidden = true;
     els.arNote.hidden = true;
@@ -556,15 +583,19 @@
       return;
     }
 
+    setupArButton();
     if (!modelViewerEl && !modelViewerBuildStarted) {
       modelViewerBuildStarted = true;
+      viewerState = "loading";
+      els.loading.hidden = false;
+      setupArButton();
       try {
         await ensureModelViewer();
         if (!root.isConnected) return;
         modelViewerEl = buildModelViewer();
         els.viewerWrap.appendChild(modelViewerEl);
         viewerTimer = setTimeout(() => {
-          if (!els.modal.hidden && els.loading.hidden === false) {
+          if (viewerState === "loading") {
             onViewerError();
             setDebug("model", "3D model loading timed out");
           }
@@ -576,8 +607,6 @@
         return;
       }
     }
-
-    setupArButton();
   }
 
   function closeModal() {
@@ -587,6 +616,24 @@
   }
 
   els.button.addEventListener("click", openModal);
+  els.arBtn.addEventListener("click", () => {
+    // activateAR must be called directly in this user gesture, not after an
+    // await, fetch, timer, modal auto-open, or a programmatic camera request.
+    if (viewerState !== "loaded" || !modelViewerEl || modelViewerEl.canActivateAR !== true) {
+      setupArButton();
+      return;
+    }
+    try {
+      showArNote("Opening AR… Your browser may ask for camera access.");
+      Promise.resolve(modelViewerEl.activateAR()).catch((err) => {
+        console.warn("[View in Your Room] AR launch failed:", err);
+        if (!els.modal.hidden) showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+      });
+    } catch (err) {
+      console.warn("[View in Your Room] AR launch failed:", err);
+      showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+    }
+  });
   els.closeBtns.forEach((btn) => btn.addEventListener("click", closeModal));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !els.modal.hidden) closeModal();
