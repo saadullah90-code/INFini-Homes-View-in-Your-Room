@@ -437,6 +437,16 @@ export const GetArExperienceResponse = zod.object({
 
 
 /**
+ * Returns the exact current contents of shopify-custom-liquid/view-in-your-room.liquid (the single source of truth for the storefront frontend) plus the backend URL configured inside it, read live from that file. Never returns any secret -- the source file itself contains none.
+ * @summary Current Shopify Custom Liquid frontend source, for display in the admin dashboard
+ */
+export const GetLiquidSourceResponse = zod.object({
+  "code": zod.string(),
+  "backendUrl": zod.string()
+}).describe('Public storefront code, meant to be copy-pasted into a Shopify Custom Liquid block. Contains no secret of any kind.\n')
+
+
+/**
  * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state -- only whether a published model exists and, if so, its public viewer URLs.
  * @summary Public, shop-restricted lookup of a product's published 3D/AR model
  */

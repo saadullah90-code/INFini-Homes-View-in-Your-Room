@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
-import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, Box, Check, CheckCircle2, ChevronRight, CircleAlert, Clock3, Cloud, Database, ExternalLink, Eye, FileClock, Filter, Grid2X2, Layers3, LayoutDashboard, Package, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck, SlidersHorizontal, Sparkles, Store, UploadCloud, X, XCircle } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, Box, Check, CheckCircle2, ChevronRight, CircleAlert, Clock3, Cloud, Copy, Database, ExternalLink, Eye, FileClock, Filter, Grid2X2, Layers3, LayoutDashboard, Package, Play, RefreshCw, Search, Settings2, ShieldAlert, ShieldCheck, SlidersHorizontal, Sparkles, Store, UploadCloud, X, XCircle } from 'lucide-react';
 import {
   useHealthCheck, useListProducts, useGetProduct, useRecheckProductEligibility, useListModels, useGetModel,
   useGenerateModel, useApproveModel, useRejectModel, usePublishModel, useUnpublishModel,
   useListQueueJobs, useGetSettings, useUpdateSettings, useGetApiStatus, useListLogs, useGetArExperience,
+  useGetLiquidSource,
   getHealthCheckQueryKey, getListProductsQueryKey, getGetProductQueryKey, getListModelsQueryKey,
   getGetModelQueryKey, getListQueueJobsQueryKey, getGetSettingsQueryKey, getGetApiStatusQueryKey,
   getListLogsQueryKey, getGetArExperienceQueryKey,
@@ -95,11 +96,83 @@ function Queue() {
  return <><Header eyebrow="PRODUCTION / 04" title="Job queue" desc="Generation work, attempts, and failures in one audit trail." action={<button data-testid="button-refresh-queue" className="btn btn-outline" onClick={()=>q.refetch()}><RefreshCw size={14}/> Refresh queue</button>}/><div className="toolbar"><select className="select" value={filter} onChange={e=>setFilter(e.target.value)} data-testid="select-filter-jobs"><option value="all">All jobs</option>{['PENDING','PROCESSING','GENERATED','FAILED','CANCELLED'].map(s=><option key={s} value={s}>{pretty(s)}</option>)}</select><span className="spacer"/><span className="small">{rows.length} jobs shown</span></div>{q.isLoading?<Load/>:q.isError?<Failure error={q.error} retry={()=>q.refetch()}/>:<div className="panel table-wrap">{rows.length?<table className="table"><thead><tr><th>Job</th><th>Model</th><th>Status</th><th>Provider</th><th>Attempts</th><th>Last error</th><th>Updated</th></tr></thead><tbody>{rows.map(j=><tr key={j.id} data-testid={`row-job-${j.id}`}><td className="cell-main mono">JOB-{String(j.id).padStart(4,'0')}</td><td><Link href={`/models/${j.productModelId}`} data-testid={`link-job-model-${j.id}`} className="btn btn-quiet">MDL-{String(j.productModelId).padStart(4,'0')} <ArrowRight size={12}/></Link></td><td><Badge value={j.status}/></td><td><Badge value={j.provider}/></td><td><span className="mono">{j.attempt} / {j.maxAttempts}</span></td><td style={{maxWidth:220,color:j.lastError?'#a75342':undefined}}>{j.lastError||'—'}</td><td>{time(j.updatedAt)}</td></tr>)}</tbody></table>:<Empty title="Queue is clear" description="Generation jobs will appear here after a model is explicitly queued for production." icon={Layers3}/>}</div>}</>;
 }
 
+function LiquidSourceSection() {
+  const q = useGetLiquidSource();
+  const status = useGetApiStatus();
+  const [copied, setCopied] = useState(false);
+  const copyCode = async () => {
+    if (!q.data) return;
+    try {
+      await navigator.clipboard.writeText(q.data.code);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = q.data.code;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+  const meshyLive = status.data?.meshy.mode === 'live';
+  return <>
+    <Section title="Shopify Custom Liquid" sub="Copy this code and paste it into a Custom Liquid section on your Shopify product page to enable View in Your Room." />
+    <div className="panel panel-pad">
+      {q.isLoading ? <Load /> : q.isError ? <Failure error={q.error} retry={() => q.refetch()} /> : <>
+        <div className="notice notice-warn" style={{ marginBottom: 16 }}>
+          <ShieldAlert size={16} style={{ verticalAlign: 'middle', marginRight: 7 }} />
+          Do not modify the code unless instructed. The code connects to the current backend automatically.
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <button data-testid="button-copy-liquid-code" className="btn btn-primary" onClick={copyCode} disabled={!q.data}>
+            <Copy size={14} /> Copy Code
+          </button>
+          <span className="small" style={{ color: '#879598' }}>{q.data ? `${q.data.code.length.toLocaleString()} characters — exact current file contents` : ''}</span>
+        </div>
+        <textarea
+          readOnly
+          spellCheck={false}
+          value={q.data?.code || ''}
+          data-testid="textarea-liquid-code"
+          onFocus={e => e.currentTarget.select()}
+          className="input"
+          style={{ width: '100%', height: 360, fontFamily: 'var(--app-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)', fontSize: 12, lineHeight: 1.55, resize: 'vertical', whiteSpace: 'pre' }}
+        />
+        <div className="grid-two" style={{ marginTop: 22 }}>
+          <div>
+            <strong style={{ display: 'block', fontSize: 13, color: '#304a50', marginBottom: 10 }}>Copy instructions</strong>
+            <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 7, fontSize: 12, color: '#4b5563' }}>
+              <li>Shopify Admin → Online Store → Themes → Customize</li>
+              <li>Open the Product template</li>
+              <li>Add a &quot;Custom Liquid&quot; section/block</li>
+              <li>Paste the copied code</li>
+              <li>Save</li>
+              <li>Open an eligible Furniture or Mattress product and test &quot;View in Your Room&quot;</li>
+            </ol>
+          </div>
+          <div>
+            <strong style={{ display: 'block', fontSize: 13, color: '#304a50', marginBottom: 10 }}>Status</strong>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Pair label="Frontend code" value={<Badge value="live" label="Ready" />} />
+              <Pair label="Backend" value="Replit Development" />
+              <Pair label="Current backend URL" value={<span style={{ fontFamily: 'var(--app-font-mono, monospace)', fontSize: 11, wordBreak: 'break-all' }}>{q.data?.backendUrl}</span>} />
+              <Pair label="Meshy" value={<Badge value={meshyLive ? 'live' : 'mock'} label={meshyLive ? 'Live generation enabled' : 'Mock / Live generation disabled'} />} />
+            </div>
+          </div>
+        </div>
+      </>}
+    </div>
+    {copied && <div role="status" className="toast-pop" data-testid="status-liquid-copied">Code copied!</div>}
+  </>;
+}
 function Settings() {
  const q=useGetSettings(), qc=useQueryClient(),update=useUpdateSettings(),[max,setMax]=useState(''),[buttonText,setButtonText]=useState(''),[unit,setUnit]=useState<SettingsUpdateDefaultUnit>('cm'),[show,setShow]=useState(false),[feedback,setFeedback]=useState('');
  useEffect(()=>{if(q.data){setMax(String(q.data.maxConcurrentGenerations));setButtonText(q.data.buttonText);setUnit(q.data.defaultUnit);setShow(q.data.showButtonBeforePublish)}},[q.data]);
  const save=()=>{if(!Number.isInteger(Number(max))||Number(max)<1||!buttonText.trim()){setFeedback('Enter a valid concurrency limit and button label.');return} update.mutate({data:{maxConcurrentGenerations:Number(max),buttonText:buttonText.trim(),defaultUnit:unit,showButtonBeforePublish:show}},{onSuccess:()=>{qc.invalidateQueries({queryKey:getGetSettingsQueryKey()});setFeedback('Settings saved successfully.')},onError:e=>setFeedback(errorText(e))})};
- return <><Header eyebrow="CONFIGURATION / 07" title="Settings" desc="Adjust your production limits and storefront behavior." action={<button data-testid="button-save-settings" className="btn btn-primary" disabled={q.isLoading||update.isPending} onClick={save}><Check size={14}/>{update.isPending?'Saving…':'Save changes'}</button>}/>{q.isLoading?<Load/>:q.isError?<Failure error={q.error} retry={()=>q.refetch()}/>:<><div className="grid-two"><div><Section title="Production & storefront" sub="Changes take effect after saving."/><div className="panel panel-pad"><div className="setting-row"><div className="setting-text"><strong>Concurrent generations</strong><p>Maximum number of generation jobs running at the same time.</p></div><div className="setting-control"><label className="field-label" htmlFor="max-jobs">Maximum jobs</label><input id="max-jobs" className="input" type="number" min="1" value={max} onChange={e=>setMax(e.target.value)} data-testid="input-max-concurrent-generations"/></div></div><div className="setting-row"><div className="setting-text"><strong>Storefront button label</strong><p>The text customers see when the experience is available.</p></div><div className="setting-control"><label className="field-label" htmlFor="button-text">Button text</label><input id="button-text" className="input" value={buttonText} onChange={e=>setButtonText(e.target.value)} data-testid="input-button-text"/></div></div><div className="setting-row"><div className="setting-text"><strong>Default measurement unit</strong><p>Used when displaying product dimensions and scale.</p></div><div className="setting-control"><label className="field-label" htmlFor="default-unit">Unit</label><select id="default-unit" className="select" value={unit} onChange={e=>setUnit(e.target.value as SettingsUpdateDefaultUnit)} data-testid="select-default-unit">{['mm','cm','m','inch','ft'].map(v=><option key={v} value={v}>{v}</option>)}</select></div></div><div className="setting-row"><div className="setting-text"><strong>Show button before publication</strong><p>Display the storefront button even if the model is not published.</p></div><button className={`switch ${show?'on':''}`} role="switch" aria-checked={show} aria-label="Show button before publication" data-testid="switch-show-before-publish" onClick={()=>setShow(!show)}/></div></div></div><div><Section title="Provider safeguards" sub="Live generation can incur real costs."/><div className="panel panel-pad"><div className="notice notice-info"><ShieldCheck size={16} style={{verticalAlign:'middle',marginRight:7}}/> Generation requires an explicit confirmation for each model, regardless of provider mode.</div><div className="sensitive"><div className="sensitive-tag">SENSITIVE / BILLABLE PROVIDER ACCESS</div><div className="setting-row"><div className="setting-text"><strong>Meshy live generation</strong><p>When enabled, generating models can spend real provider credits. This setting is shown for visibility but cannot be changed through the available settings API.</p><div style={{marginTop:13}}><Badge value={q.data?.meshyLiveGenerationEnabled?'live':'mock'} label={q.data?.meshyLiveGenerationEnabled?'Live generation enabled':'Live generation disabled'}/></div></div><div className="switch" role="switch" aria-checked={!!q.data?.meshyLiveGenerationEnabled} aria-disabled="true" title="Not editable through this API" style={{opacity:.55,cursor:'not-allowed',background:q.data?.meshyLiveGenerationEnabled?'#b36a32':undefined}}/></div></div><p className="field-help" style={{marginTop:15}}>For a change to live billing, contact the account administrator or configure the provider through a supported backend workflow.</p></div></div></div>{feedback&&<div role="status" className="toast-pop" data-testid="status-settings-save">{feedback}</div>}</>}</>;
+ return <><Header eyebrow="CONFIGURATION / 07" title="Settings" desc="Adjust your production limits and storefront behavior." action={<button data-testid="button-save-settings" className="btn btn-primary" disabled={q.isLoading||update.isPending} onClick={save}><Check size={14}/>{update.isPending?'Saving…':'Save changes'}</button>}/>{q.isLoading?<Load/>:q.isError?<Failure error={q.error} retry={()=>q.refetch()}/>:<><div className="grid-two"><div><Section title="Production & storefront" sub="Changes take effect after saving."/><div className="panel panel-pad"><div className="setting-row"><div className="setting-text"><strong>Concurrent generations</strong><p>Maximum number of generation jobs running at the same time.</p></div><div className="setting-control"><label className="field-label" htmlFor="max-jobs">Maximum jobs</label><input id="max-jobs" className="input" type="number" min="1" value={max} onChange={e=>setMax(e.target.value)} data-testid="input-max-concurrent-generations"/></div></div><div className="setting-row"><div className="setting-text"><strong>Storefront button label</strong><p>The text customers see when the experience is available.</p></div><div className="setting-control"><label className="field-label" htmlFor="button-text">Button text</label><input id="button-text" className="input" value={buttonText} onChange={e=>setButtonText(e.target.value)} data-testid="input-button-text"/></div></div><div className="setting-row"><div className="setting-text"><strong>Default measurement unit</strong><p>Used when displaying product dimensions and scale.</p></div><div className="setting-control"><label className="field-label" htmlFor="default-unit">Unit</label><select id="default-unit" className="select" value={unit} onChange={e=>setUnit(e.target.value as SettingsUpdateDefaultUnit)} data-testid="select-default-unit">{['mm','cm','m','inch','ft'].map(v=><option key={v} value={v}>{v}</option>)}</select></div></div><div className="setting-row"><div className="setting-text"><strong>Show button before publication</strong><p>Display the storefront button even if the model is not published.</p></div><button className={`switch ${show?'on':''}`} role="switch" aria-checked={show} aria-label="Show button before publication" data-testid="switch-show-before-publish" onClick={()=>setShow(!show)}/></div></div></div><div><Section title="Provider safeguards" sub="Live generation can incur real costs."/><div className="panel panel-pad"><div className="notice notice-info"><ShieldCheck size={16} style={{verticalAlign:'middle',marginRight:7}}/> Generation requires an explicit confirmation for each model, regardless of provider mode.</div><div className="sensitive"><div className="sensitive-tag">SENSITIVE / BILLABLE PROVIDER ACCESS</div><div className="setting-row"><div className="setting-text"><strong>Meshy live generation</strong><p>When enabled, generating models can spend real provider credits. This setting is shown for visibility but cannot be changed through the available settings API.</p><div style={{marginTop:13}}><Badge value={q.data?.meshyLiveGenerationEnabled?'live':'mock'} label={q.data?.meshyLiveGenerationEnabled?'Live generation enabled':'Live generation disabled'}/></div></div><div className="switch" role="switch" aria-checked={!!q.data?.meshyLiveGenerationEnabled} aria-disabled="true" title="Not editable through this API" style={{opacity:.55,cursor:'not-allowed',background:q.data?.meshyLiveGenerationEnabled?'#b36a32':undefined}}/></div></div><p className="field-help" style={{marginTop:15}}>For a change to live billing, contact the account administrator or configure the provider through a supported backend workflow.</p></div></div></div>{feedback&&<div role="status" className="toast-pop" data-testid="status-settings-save">{feedback}</div>}<div style={{marginTop:34}}><LiquidSourceSection/></div></>}</>;
 }
 function Status() {
  const q=useGetApiStatus(),health=useHealthCheck();const icons:Record<string,typeof Store>={shopify:Store,meshy:Sparkles,database:Database,storage:Cloud};

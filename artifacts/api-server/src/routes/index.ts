@@ -10,6 +10,7 @@ import arRouter from "./ar";
 import shopifyAuthRouter from "./shopify-auth";
 import shopifyWebhooksRouter from "./shopify-webhooks";
 import storefrontRouter from "./storefront";
+import liquidSourceRouter from "./liquid-source";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(arRouter);
 router.use(shopifyAuthRouter);
 router.use(shopifyWebhooksRouter);
 router.use(storefrontRouter);
+router.use(liquidSourceRouter);
 
 export default router;

@@ -26,6 +26,8 @@ tags:
     description: Public AR/3D viewer lookup
   - name: storefront
     description: Public, shop-restricted read-only storefront lookup
+  - name: admin
+    description: Internal admin-dashboard-only helper endpoints
 paths:
   /healthz:
     get:
@@ -329,6 +331,25 @@ paths:
         "404":
           description: Invalid, expired, or unpublished token
 
+  /liquid-source:
+    get:
+      operationId: getLiquidSource
+      tags: [admin]
+      summary: Current Shopify Custom Liquid frontend source, for display in the admin dashboard
+      description: >
+        Returns the exact current contents of
+        shopify-custom-liquid/view-in-your-room.liquid (the single source of
+        truth for the storefront frontend) plus the backend URL configured
+        inside it, read live from that file. Never returns any secret --
+        the source file itself contains none.
+      responses:
+        "200":
+          description: Liquid source and configured backend URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiquidSource"
+
   /storefront/model:
     get:
       operationId: getStorefrontModel
@@ -622,6 +643,18 @@ components:
       required:
         - productTitle
         - modelUrl
+
+    LiquidSource:
+      type: object
+      description: >
+        Public storefront code, meant to be copy-pasted into a Shopify
+        Custom Liquid block. Contains no secret of any kind.
+      properties:
+        code: { type: string }
+        backendUrl: { type: string }
+      required:
+        - code
+        - backendUrl
 
     StorefrontModel:
       type: object

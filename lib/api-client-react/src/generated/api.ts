@@ -27,6 +27,7 @@ import type {
   GenerationJob,
   GetStorefrontModelParams,
   HealthStatus,
+  LiquidSource,
   LogEntry,
   Product,
   ProductModel,
@@ -1399,6 +1400,84 @@ export function useGetArExperience<TData = Awaited<ReturnType<typeof getArExperi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetArExperienceQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLiquidSourceUrl = () => {
+
+
+
+
+  return `/api/liquid-source`
+}
+
+/**
+ * Returns the exact current contents of shopify-custom-liquid/view-in-your-room.liquid (the single source of truth for the storefront frontend) plus the backend URL configured inside it, read live from that file. Never returns any secret -- the source file itself contains none.
+ * @summary Current Shopify Custom Liquid frontend source, for display in the admin dashboard
+ */
+export const getLiquidSource = async ( options?: Parameters<typeof customFetch>[1]): Promise<LiquidSource> => {
+
+  return customFetch<LiquidSource>(getGetLiquidSourceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLiquidSourceQueryKey = () => {
+    return [
+    `/api/liquid-source`
+    ] as const;
+    }
+
+
+export const getGetLiquidSourceQueryOptions = <TData = Awaited<ReturnType<typeof getLiquidSource>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiquidSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLiquidSourceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLiquidSource>>> = ({ signal }) => getLiquidSource({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLiquidSource>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLiquidSourceQueryResult = NonNullable<Awaited<ReturnType<typeof getLiquidSource>>>
+export type GetLiquidSourceQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current Shopify Custom Liquid frontend source, for display in the admin dashboard
+ */
+
+export function useGetLiquidSource<TData = Awaited<ReturnType<typeof getLiquidSource>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiquidSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLiquidSourceQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

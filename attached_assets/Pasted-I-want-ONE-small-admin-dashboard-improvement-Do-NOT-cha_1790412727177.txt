@@ -1,0 +1,196 @@
+I want ONE small admin-dashboard improvement.
+
+Do NOT change the existing backend architecture, Shopify OAuth, Shopify configuration, Meshy, database schema, product logic, generation workflow, or existing storefront functionality.
+
+Do NOT regenerate or redesign the existing Custom Liquid frontend.
+
+The existing file:
+shopify-custom-liquid/view-in-your-room.liquid
+
+must remain the SINGLE SOURCE OF TRUTH for the Shopify Custom Liquid frontend code.
+
+==================================================
+NEW ADMIN SETTINGS SECTION
+==================================================
+
+Add a new section inside the existing Admin Dashboard → Settings page:
+
+"Shopify Custom Liquid"
+
+The purpose is to make the complete frontend code easily accessible to the store owner without opening the Replit file browser.
+
+The section should contain:
+
+1. A clear heading:
+
+Shopify Custom Liquid
+
+2. Short explanation:
+
+"Copy this code and paste it into a Custom Liquid section on your Shopify product page to enable View in Your Room."
+
+3. A large read-only code box/editor containing the COMPLETE contents of:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+The code must be shown exactly as the actual current file contents.
+
+Do NOT create a second hard-coded copy of the code that can become outdated.
+
+The Settings UI must read/use the same source file/content already used by the project.
+
+4. Add a prominent:
+
+"Copy Code"
+
+button.
+
+When clicked:
+- copy the COMPLETE Custom Liquid code to clipboard
+- show a temporary confirmation:
+  "Code copied!"
+
+5. Add:
+
+"Copy Instructions"
+
+or a clearly visible instruction area:
+
+STEP 1
+Shopify Admin → Online Store → Themes → Customize
+
+STEP 2
+Open the Product template
+
+STEP 3
+Add a "Custom Liquid" section/block
+
+STEP 4
+Paste the copied code
+
+STEP 5
+Save
+
+STEP 6
+Open an eligible Furniture or Mattress product and test "View in Your Room"
+
+6. Add a small warning:
+
+"Do not modify the code unless instructed. The code connects to the current backend automatically."
+
+7. Show the current backend URL separately as read-only information.
+
+Example:
+
+Current Backend:
+https://22a9ae4d-ce01-4ecf-8256-285c64105e6d-00-1e8puxyeezg0r.sisko.replit.dev
+
+Do NOT expose any secret/API key.
+
+8. Add a small status indicator:
+
+Frontend Code: Ready
+Backend: Replit Development
+Meshy: Mock / Live Generation Disabled
+
+The Meshy status must use the existing backend setting/status and must not enable anything.
+
+==================================================
+IMPORTANT CODE SOURCE REQUIREMENT
+==================================================
+
+There must NOT be two independently maintained versions of the Custom Liquid code.
+
+The existing:
+
+shopify-custom-liquid/view-in-your-room.liquid
+
+must remain the source of truth.
+
+If the frontend code needs a backend URL, preserve the existing single configuration constant:
+
+VIEW_IN_YOUR_ROOM_API
+
+Do not expose secrets.
+
+The Settings page should display the actual current contents of the file.
+
+If the dashboard architecture cannot safely read the file directly at runtime, create a safe build-time/generated representation from the SAME source file rather than manually duplicating the code.
+
+The goal is:
+
+ONE SOURCE OF TRUTH
+→ Settings displays that exact code
+→ Copy Code copies that exact code
+→ Shopify Custom Liquid receives that exact code
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+Make the section professional and consistent with the existing Admin Dashboard design.
+
+Use:
+- readable code area
+- monospace font
+- copy button
+- clear instructions
+- responsive layout
+
+Do not redesign the entire Settings page.
+
+Do not modify unrelated Settings sections.
+
+Do not modify the existing dashboard navigation.
+
+==================================================
+SECURITY
+==================================================
+
+The displayed code is public storefront code.
+
+It must contain NO:
+
+- Shopify API secret
+- Shopify access token
+- Meshy API key
+- database credentials
+- SESSION_SECRET
+- signing secret
+- admin credentials
+
+Only the public Replit backend URL may appear.
+
+==================================================
+TESTING
+==================================================
+
+After implementation verify:
+
+1. Settings page still loads.
+2. Existing Settings sections still work.
+3. New Shopify Custom Liquid section appears.
+4. Complete current view-in-your-room.liquid code is displayed.
+5. Copy Code copies the complete code.
+6. Copied code exactly matches the source file.
+7. No secrets appear in the displayed code.
+8. Backend URL is correct.
+9. Meshy remains disabled.
+10. No Shopify configuration changes.
+11. No database migration.
+12. No generation job.
+13. No Meshy API call.
+14. Existing admin dashboard remains functional.
+
+IMPORTANT:
+Do NOT change anything else.
+
+After implementation report:
+- exact files created
+- exact files modified
+- exact files untouched
+- tests performed
+- confirmation that Meshy was not called
+- confirmation that no Shopify configuration was changed
+
+STOP after this change.

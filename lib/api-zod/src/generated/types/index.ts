@@ -16,6 +16,7 @@ export * from './generationJobProvider';
 export * from './generationJobStatus';
 export * from './getStorefrontModelParams';
 export * from './healthStatus';
+export * from './liquidSource';
 export * from './logEntry';
 export * from './logEntryLevel';
 export * from './product';

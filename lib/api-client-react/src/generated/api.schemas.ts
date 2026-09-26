@@ -259,6 +259,14 @@ export interface ArExperience {
 }
 
 /**
+ * Public storefront code, meant to be copy-pasted into a Shopify Custom Liquid block. Contains no secret of any kind.
+ */
+export interface LiquidSource {
+  code: string;
+  backendUrl: string;
+}
+
+/**
  * Only ever contains public, already-published data. `available: false` carries no other fields.
  */
 export interface StorefrontModel {
