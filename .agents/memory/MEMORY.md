@@ -4,3 +4,4 @@
 - [Gating paid AI generation](gating-paid-ai-generation.md) — gate live/paid provider calls on a persisted DB setting, not env-var presence, so adding a key alone can't trigger real spend.
 - [Shopify custom app OAuth architecture](shopify-custom-app-oauth-architecture.md) — non-embedded custom app OAuth: authorization-code grant, request-host-derived callback URLs, token-at-rest encryption via existing session secret.
 - [Shopify browser boundaries](shopify-browser-boundaries.md) — real Liquid image URLs and cross-origin preflights must be tested; direct API success does not prove theme integration.
+- [App Storage publication](app-storage-publication.md) — dev GLB upload and verification do not activate storage in an already-running published build; verify production before model review.
