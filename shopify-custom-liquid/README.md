@@ -39,3 +39,9 @@ Shopify product page
 ```
 
 The QR points to the canonical Shopify product page with `view_ar=1` and the selected numeric `variant` query parameter (from the page URL or Shopify product form, if available). It never carries a token or secret; debug and unrelated URL parameters are excluded. Scanning opens the viewer, **not** AR automatically.
+
+## White wardrobe camera/image experiment (separate block)
+
+`wardrobe-camera-test.liquid` is an **optional, isolated test** for the white two-door wardrobe product only. In Shopify's product template, add a **second Custom Liquid block** and paste the entire file there. Do **not** replace or edit the existing `view-in-your-room.liquid` block. It adds its own clearly labeled test button only on the matching wardrobe product page.
+
+The button opens the device camera after a tap and overlays the transparent white-wardrobe front PNG already uploaded to this product. Drag the image or use the size slider; closing the overlay stops the camera. Camera access requires a supported browser, HTTPS, and the shopper's permission. This is a **2D visual experiment** without floor tracking, real-world scale, or 3D/AR placement; it is always the white image even when another colour is selected. Remove the second block to end the experiment without changing the original 3D flow.

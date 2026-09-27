@@ -1,0 +1,202 @@
+{% comment %}
+  White wardrobe camera/image experiment ONLY.
+  Add as a separate Custom Liquid block on the product template.
+  Do not replace or edit the existing View in Your Room (3D/AR) block.
+  This is a movable 2D image over a camera feed, NOT tracked AR.
+{% endcomment %}
+{% if product.handle == 'infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly' %}
+<div class="viyr-image-test" id="viyr-image-test-{{ product.id }}">
+  <button class="viyr-image-test__open" type="button" data-open>
+    Test: View white wardrobe image in your room
+  </button>
+
+  <div class="viyr-image-test__modal" data-modal hidden role="dialog" aria-modal="true" aria-label="White wardrobe camera image preview">
+    <div class="viyr-image-test__top">
+      <div>
+        <strong>White wardrobe · image preview</strong>
+        <p>2D image test, not 3D/AR. Size and placement are approximate.</p>
+      </div>
+      <button type="button" class="viyr-image-test__close" data-close aria-label="Close camera preview">&times;</button>
+    </div>
+
+    <div class="viyr-image-test__stage" data-stage>
+      <video data-video autoplay muted playsinline aria-label="Live camera view"></video>
+      <img
+        data-image
+        class="viyr-image-test__image"
+        src="https://cdn.shopify.com/s/files/1/0625/5892/8940/files/ChatGPT_Image_Sep_27_2026_09_40_27_PM.png?v=1790527336"
+        alt="White two-door wardrobe front view"
+        draggable="false"
+      >
+      <p class="viyr-image-test__message" data-message role="status" aria-live="polite">Starting camera…</p>
+    </div>
+
+    <div class="viyr-image-test__controls">
+      <span>Drag the image to move it</span>
+      <label for="viyr-image-size-{{ product.id }}">Image size</label>
+      <input id="viyr-image-size-{{ product.id }}" data-size type="range" min="50" max="180" value="100" aria-label="Image size">
+      <button type="button" data-reset>Reset position</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .viyr-image-test { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .viyr-image-test *, .viyr-image-test *::before, .viyr-image-test *::after { box-sizing: border-box; }
+  .viyr-image-test__open {
+    margin: 8px 0; padding: 11px 17px; border: 1px solid #111827; border-radius: 999px;
+    background: #fff; color: #111827; font-family: inherit; font-size: 14px;
+    font-weight: 600; line-height: 1.3; cursor: pointer;
+  }
+  .viyr-image-test__modal {
+    position: fixed; inset: 0; z-index: 2147483001; display: flex;
+    flex-direction: column; background: #101820; color: white; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .viyr-image-test__modal[hidden] { display: none; }
+  .viyr-image-test__top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: max(14px, env(safe-area-inset-top)) 18px 12px; flex: none;
+  }
+  .viyr-image-test__top strong { font-size: 16px; }
+  .viyr-image-test__top p { margin: 4px 0 0; color: #cbd5e1; font-size: 12px; }
+  .viyr-image-test__close {
+    flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%;
+    background: #fff; color: #111827; font-size: 26px; line-height: 1; cursor: pointer;
+  }
+  .viyr-image-test__stage { position: relative; min-height: 0; flex: 1; overflow: hidden; background: #1d2933; }
+  .viyr-image-test__stage video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .viyr-image-test__image {
+    position: absolute; top: 50%; left: 50%; height: min(55vh, 480px); max-height: 84%;
+    width: auto; max-width: 80%; object-fit: contain; cursor: grab;
+    touch-action: none; user-select: none; -webkit-user-drag: none;
+    transform: translate(-50%, -50%) translate(var(--move-x, 0px), var(--move-y, 0px)) scale(var(--size, 1));
+    transform-origin: center;
+    filter: drop-shadow(0 7px 8px rgba(0,0,0,.35));
+  }
+  .viyr-image-test__image:active { cursor: grabbing; }
+  .viyr-image-test__message {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    max-width: min(92%, 480px); margin: 0; padding: 10px 14px;
+    border-radius: 8px; background: rgba(0,0,0,.78); text-align: center;
+  }
+  .viyr-image-test__message[hidden] { display: none; }
+  .viyr-image-test__controls {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px;
+    padding: 14px 18px max(14px, env(safe-area-inset-bottom)); flex: none;
+  }
+  .viyr-image-test__controls span { width: 100%; text-align: center; font-size: 12px; color: #cbd5e1; }
+  .viyr-image-test__controls input { width: min(38vw, 200px); accent-color: #fff; }
+  .viyr-image-test__controls button {
+    padding: 8px 11px; border: 1px solid #9ca3af; border-radius: 7px;
+    color: #fff; background: transparent; cursor: pointer;
+  }
+  @media (max-width: 550px) {
+    .viyr-image-test__controls { gap: 8px; font-size: 12px; }
+    .viyr-image-test__controls input { width: 30vw; }
+  }
+</style>
+<script>
+(function () {
+  const root = document.getElementById("viyr-image-test-{{ product.id }}");
+  if (!root || root.dataset.initialized === "true") return;
+  root.dataset.initialized = "true";
+  const modal = root.querySelector("[data-modal]");
+  const video = root.querySelector("[data-video]");
+  const image = root.querySelector("[data-image]");
+  const message = root.querySelector("[data-message]");
+  const size = root.querySelector("[data-size]");
+  let stream = null;
+  let requestId = 0;
+  let previousOverflow = "";
+  let offsetX = 0;
+  let offsetY = 0;
+  let drag = null;
+
+  function setMessage(text) {
+    message.textContent = text;
+    message.hidden = !text;
+  }
+  function positionImage() {
+    image.style.setProperty("--move-x", offsetX + "px");
+    image.style.setProperty("--move-y", offsetY + "px");
+    image.style.setProperty("--size", String(Number(size.value) / 100));
+  }
+  function stopCamera() {
+    requestId++;
+    if (stream) stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+    video.pause();
+    video.srcObject = null;
+  }
+  function close() {
+    stopCamera();
+    modal.hidden = true;
+    document.body.style.overflow = previousOverflow;
+    root.querySelector("[data-open]").focus();
+  }
+  async function open() {
+    // getUserMedia is called inside the click handler, never on page load.
+    modal.hidden = false;
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    root.querySelector("[data-close]").focus();
+    setMessage("Starting camera…");
+    const currentRequest = ++requestId;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMessage("Camera unavailable in this browser. Open this page on a phone over HTTPS.");
+      return;
+    }
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: "environment" } },
+      });
+      if (currentRequest !== requestId || modal.hidden) {
+        newStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      stream = newStream;
+      video.srcObject = stream;
+      await video.play();
+      if (currentRequest === requestId) setMessage("");
+    } catch (err) {
+      if (currentRequest !== requestId) return;
+      stopCamera();
+      setMessage(err && err.name === "NotAllowedError"
+        ? "Camera permission denied. Allow camera access in your browser and reopen this preview."
+        : "Camera could not start. Try a phone browser with camera access.");
+    }
+  }
+
+  root.querySelector("[data-open]").addEventListener("click", open);
+  root.querySelector("[data-close]").addEventListener("click", close);
+  root.querySelector("[data-reset]").addEventListener("click", () => {
+    offsetX = offsetY = 0;
+    size.value = "100";
+    positionImage();
+  });
+  size.addEventListener("input", positionImage);
+  image.addEventListener("pointerdown", (event) => {
+    if (modal.hidden) return;
+    drag = { x: event.clientX - offsetX, y: event.clientY - offsetY, id: event.pointerId };
+    image.setPointerCapture(event.pointerId);
+  });
+  image.addEventListener("pointermove", (event) => {
+    if (!drag || drag.id !== event.pointerId) return;
+    offsetX = event.clientX - drag.x;
+    offsetY = event.clientY - drag.y;
+    positionImage();
+  });
+  image.addEventListener("pointerup", () => { drag = null; });
+  image.addEventListener("pointercancel", () => { drag = null; });
+  image.addEventListener("error", () => setMessage("Wardrobe PNG could not load. Please check the Shopify product image."));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) close();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && !modal.hidden) close();
+  });
+  window.addEventListener("pagehide", stopCamera);
+})();
+</script>
+{% endif %}
