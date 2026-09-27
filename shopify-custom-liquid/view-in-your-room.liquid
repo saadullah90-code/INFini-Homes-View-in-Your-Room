@@ -46,6 +46,8 @@
 
       <div class="viyr-modal__body">
         <div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
+          <video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
+          <img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product image" draggable="false">
           <div class="viyr-state viyr-state--loading" data-viyr-loading>
             <div class="viyr-spinner" aria-hidden="true"></div>
             <p>Loading 3D model…</p>
@@ -68,6 +70,11 @@
             View in your space (AR)
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
+          <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>Start camera (2D image overlay)</button>
+          <p class="viyr-ar-note" data-viyr-camera-note hidden role="status" aria-live="polite"></p>
+          <label class="viyr-image-size" data-viyr-image-size-wrap hidden>Visual image size
+            <input type="range" data-viyr-image-size min="50" max="180" value="100">
+          </label>
 
           <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
@@ -195,6 +202,20 @@
     min-height: 320px; background: #f3f4f6;
   }
   .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
+  .viyr-viewer-wrap model-viewer[hidden] { display: none; }
+  .viyr-camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .viyr-product-image {
+    position: absolute; top: 50%; left: 50%; max-width: 86%; max-height: 86%;
+    width: auto; height: auto; object-fit: contain; cursor: grab; touch-action: none;
+    user-select: none; -webkit-user-drag: none;
+    transform: translate(-50%, -50%) translate(var(--move-x, 0px), var(--move-y, 0px)) scale(var(--size, 1));
+    filter: drop-shadow(0 7px 8px rgba(0,0,0,.18));
+  }
+  .viyr-product-image:active { cursor: grabbing; }
+  .viyr-camera-video[hidden], .viyr-product-image[hidden] { display: none; }
+  .viyr-image-size { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4b5563; }
+  .viyr-image-size[hidden] { display: none; }
+  .viyr-image-size input { width: 180px; max-width: 100%; }
 
   .viyr-state {
     position: absolute; inset: 0; display: flex; flex-direction: column;
@@ -376,6 +397,12 @@
     modal: root.querySelector("[data-viyr-modal]"),
     closeBtns: root.querySelectorAll("[data-viyr-close]"),
     viewerWrap: root.querySelector("[data-viyr-viewer-wrap]"),
+    productImage: root.querySelector("[data-viyr-product-image]"),
+    cameraVideo: root.querySelector("[data-viyr-camera-video]"),
+    cameraButton: root.querySelector("[data-viyr-start-camera]"),
+    cameraNote: root.querySelector("[data-viyr-camera-note]"),
+    imageSize: root.querySelector("[data-viyr-image-size]"),
+    imageSizeWrap: root.querySelector("[data-viyr-image-size-wrap]"),
     loading: root.querySelector("[data-viyr-loading]"),
     error: root.querySelector("[data-viyr-error]"),
     errorMessage: root.querySelector("[data-viyr-error-message]"),
@@ -414,7 +441,93 @@
   // them resumes after `await ensureModelViewer()` -- can't all see
   // `modelViewerEl` as still null and each build their own <model-viewer>.
   let modelViewerBuildStarted = false;
-  let previousOverflow = "";
+  const isWardrobe = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly";
+  const landingParams = new URLSearchParams(window.location.search);
+  // Old no-model QRs used view_dimensions=1. If this product has an image,
+  // open that image instead; dimensions remain a separate explicit button.
+  const imageLanding = landingParams.get("view_product_image") === "1"
+    || (landingParams.get("view_dimensions") === "1" && !!productImageUrls[0]);
+  let forceImageFallback = false;
+  let imageFailed = false;
+  let cameraStream = null;
+  let cameraRequest = 0;
+  let imageOffsetX = 0;
+  let imageOffsetY = 0;
+  let imageDrag = null;
+  function useProductImage() {
+    // This product's first Shopify image is the transparent white-wardrobe PNG.
+    // On other products, a published 3D model still takes precedence.
+    return !!productImageUrls[0] && (isWardrobe || imageLanding || forceImageFallback || !modelData);
+  }
+  function stopCamera() {
+    cameraRequest++;
+    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+    els.cameraVideo.pause();
+    els.cameraVideo.srcObject = null;
+    els.cameraVideo.hidden = true;
+    els.cameraButton.hidden = !useProductImage() || !isWardrobe || !isMobileDevice();
+  }
+  async function startCamera() {
+    const request = ++cameraRequest;
+    els.cameraNote.textContent = "Starting camera…";
+    els.cameraNote.hidden = false;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      els.cameraNote.textContent = "Camera unavailable here. Use a phone browser over HTTPS.";
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false, video: { facingMode: { ideal: "environment" } },
+      });
+      if (request !== cameraRequest || els.modal.hidden || !useProductImage()) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      cameraStream = stream;
+      els.cameraVideo.srcObject = stream;
+      els.cameraVideo.hidden = false;
+      await els.cameraVideo.play();
+      if (request === cameraRequest) {
+        els.cameraButton.hidden = true;
+        els.cameraNote.textContent = "2D visual overlay only. Drag or resize the image; placement is not measured.";
+      }
+    } catch (error) {
+      if (request !== cameraRequest) return;
+      stopCamera();
+      els.cameraNote.textContent = error && error.name === "NotAllowedError"
+        ? "Camera permission was denied. Allow camera access in your browser."
+        : "Camera could not start on this device.";
+    }
+  }
+  function positionProductImage() {
+    els.productImage.style.setProperty("--move-x", imageOffsetX + "px");
+    els.productImage.style.setProperty("--move-y", imageOffsetY + "px");
+    els.productImage.style.setProperty("--size", String(Number(els.imageSize.value) / 100));
+  }
+  function showProductImage() {
+    els.loading.hidden = true;
+    els.error.hidden = !imageFailed;
+    els.retry.hidden = true;
+    if (imageFailed) els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
+    if (modelViewerEl) modelViewerEl.hidden = true;
+    els.productImage.hidden = imageFailed;
+    if (els.productImage.src !== productImageUrls[0]) els.productImage.src = productImageUrls[0];
+    els.hint.hidden = false;
+    els.hint.textContent = isWardrobe
+      ? "White wardrobe PNG • 2D visual preview, not to scale."
+      : "Product photo • 2D visual preview, not to scale.";
+    els.arBtn.hidden = true;
+    showArNote("");
+    els.cameraButton.hidden = !isWardrobe || !isMobileDevice() || !!cameraStream;
+    els.cameraNote.hidden = !cameraStream;
+    els.imageSizeWrap.hidden = !isWardrobe;
+  }
+  function updateButtonLabel() {
+    els.buttonLabel.textContent = useProductImage()
+      ? "View Product Image & Check Size"
+      : modelData ? "View in Your Room & Check Size" : "Check Size & Room Fit";
+  }
   let lastSizeChoice = els.sizeChoice.value;
   const sizeDrafts = new Map();
   const productFields = ["product-width", "product-depth", "product-height"];
@@ -638,12 +751,12 @@
       if (data.available && data.modelUrl) {
         modelData = data;
         addReferenceSize();
-        els.buttonLabel.textContent = "View in Your Room & Check Size";
         els.button.hidden = false;
 
       } else if (data.available) {
         throw new Error("Published model response has no model URL");
       }
+      updateButtonLabel();
       availabilityChecking = false;
       // QR links can open a preview or the calculator, never AR/camera
       // without a user tap.
@@ -790,22 +903,19 @@
     page.hash = "";
     const variant = selectedVariantId();
     if (variant) page.searchParams.set("variant", variant);
-    // Wardrobe experiment only: if its separate camera-image test block is
-    // installed, hand off to that block instead of reopening this 3D viewer.
-    // Other products and stores without that block retain the original 3D QR.
-    const imageTestInstalled = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly"
-      && !!document.getElementById("viyr-image-test-" + productId);
-    page.searchParams.set(imageTestInstalled ? "view_image" : modelData ? "view_ar" : "view_dimensions", "1");
+    // The QR opens the same primary preview on the phone. The calculator has
+    // its own button; scanning an image QR must never open dimensions.
+    page.searchParams.set(useProductImage() ? "view_product_image" : modelData ? "view_ar" : "view_dimensions", "1");
     return page.toString();
   }
 
   function renderDesktopQr() {
     const request = ++qrRequest;
     const qrTarget = productPageUrl();
-    const imageHandoff = new URL(qrTarget).searchParams.has("view_image");
+    const imageHandoff = new URL(qrTarget).searchParams.has("view_product_image");
     const qrLabel = els.qrWrap.querySelector(".viyr-qr__label");
     if (qrLabel) qrLabel.textContent = imageHandoff
-      ? "Scan with your phone for the 2D wardrobe camera-image test"
+      ? "Scan with your phone to view the product image"
       : modelData ? "Scan with your phone for AR" : "Scan with your phone to enter room dimensions";
     els.qrWrap.hidden = false;
     els.qrCanvas.replaceChildren();
@@ -833,14 +943,14 @@
     const valid = dims && ["width", "height", "depth"].every((key) =>
       typeof dims[key] === "number" && Number.isFinite(dims[key]) && dims[key] > 0)
       && typeof dims.unit === "string" && /^[a-zA-Z]{1,12}$/.test(dims.unit);
-    els.dimensions.hidden = !valid;
+    els.dimensions.hidden = !valid || useProductImage();
     els.dimensions.textContent = valid
       ? "Modeled preview size: " + dims.width + "W × " + dims.depth + "L × " + dims.height + "H " + dims.unit
       : "";
     const notice = modelData && typeof modelData.modelNotice === "string" ? modelData.modelNotice.trim() : "";
     els.modelNotice.textContent = notice;
-    els.modelNotice.hidden = !notice;
-    els.sizeNote.hidden = !modelData;
+    els.modelNotice.hidden = !notice || useProductImage();
+    els.sizeNote.hidden = !modelData || useProductImage();
     els.sizeNote.textContent = modelData
       ? "This 3D model represents only the previewed size" + (selectedVariantId() ? ", not necessarily your selected variant" : "") + ". Other sizes are not verified or automatically scaled."
       : "";
@@ -875,6 +985,15 @@
       renderDesktopQr();
     }
 
+    if (useProductImage()) {
+      showProductImage();
+      return;
+    }
+    els.productImage.hidden = true;
+    els.cameraButton.hidden = true;
+    els.cameraNote.hidden = true;
+    els.imageSizeWrap.hidden = true;
+    if (modelViewerEl) modelViewerEl.hidden = false;
     if (!modelData) {
       els.loading.hidden = !availabilityChecking;
       els.error.hidden = availabilityChecking;
@@ -927,6 +1046,7 @@
   }
 
   function closeModal() {
+    stopCamera();
     resetQr();
     els.fit.hidden = true;
     els.body.hidden = false;
@@ -970,7 +1090,7 @@
       if (data.available && !data.modelUrl) throw new Error("Published model response has no model URL");
       modelData = data.available ? data : null;
       if (modelData) addReferenceSize();
-      els.buttonLabel.textContent = modelData ? "View in Your Room & Check Size" : "Check Size & Room Fit";
+      updateButtonLabel();
       setDebug("model", modelData ? "published" : "not available");
     } catch (err) {
       availabilityFailed = true;
@@ -1004,7 +1124,36 @@
     if (e.key === "Escape" && !els.modal.hidden) closeModal();
   });
 
-  if (new URLSearchParams(window.location.search).get("view_dimensions") === "1") {
+  els.productImage.addEventListener("error", () => {
+    imageFailed = true;
+    els.productImage.hidden = true;
+    els.error.hidden = false;
+    els.retry.hidden = true;
+    els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
+  });
+  els.cameraButton.addEventListener("click", startCamera);
+  els.imageSize.addEventListener("input", positionProductImage);
+  els.productImage.addEventListener("pointerdown", (event) => {
+    if (els.productImage.hidden) return;
+    imageDrag = { id: event.pointerId, x: event.clientX - imageOffsetX, y: event.clientY - imageOffsetY };
+    els.productImage.setPointerCapture(event.pointerId);
+  });
+  els.productImage.addEventListener("pointermove", (event) => {
+    if (!imageDrag || imageDrag.id !== event.pointerId) return;
+    imageOffsetX = event.clientX - imageDrag.x;
+    imageOffsetY = event.clientY - imageDrag.y;
+    positionProductImage();
+  });
+  els.productImage.addEventListener("pointerup", () => { imageDrag = null; });
+  els.productImage.addEventListener("pointercancel", () => { imageDrag = null; });
+  window.addEventListener("pagehide", stopCamera);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopCamera();
+  });
+
+  updateButtonLabel();
+  if (imageLanding) openModal();
+  else if (new URLSearchParams(window.location.search).get("view_dimensions") === "1") {
     openModal();
     showFitPanel();
   }

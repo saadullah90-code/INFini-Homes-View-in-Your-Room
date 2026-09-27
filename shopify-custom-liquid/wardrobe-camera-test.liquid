@@ -211,9 +211,8 @@
     if (document.hidden && !modal.hidden) close();
   });
   window.addEventListener("pagehide", stopCamera);
-  // This flag is added by the wardrobe QR code, which opens this image preview
-  // on the phone without triggering a camera permission request on page load.
-  if (new URLSearchParams(window.location.search).get("view_image") === "1") open(false);
+  // The main View in Your Room block owns ?view_product_image=1 QR landings.
+  // This optional standalone experiment opens only via its own test button.
 })();
 </script>
 {% endif %}
