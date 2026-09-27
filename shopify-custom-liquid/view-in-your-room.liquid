@@ -292,6 +292,7 @@
   const productHandle = root.dataset.productHandle;
   const shopStorefrontDomain = root.dataset.shopStorefrontDomain || window.location.hostname;
   const productTitle = root.dataset.productTitle || "";
+  const productUrl = "/products/" + encodeURIComponent(productHandle);
   let productImageUrls = [];
   let imageParseError = "";
   try {
