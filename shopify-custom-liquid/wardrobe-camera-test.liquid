@@ -32,6 +32,7 @@
     </div>
 
     <div class="viyr-image-test__controls">
+      <button type="button" data-start-camera hidden>Start camera</button>
       <span>Drag the image to move it</span>
       <label for="viyr-image-size-{{ product.id }}">Image size</label>
       <input id="viyr-image-size-{{ product.id }}" data-size type="range" min="50" max="180" value="100" aria-label="Image size">
@@ -105,6 +106,7 @@
   const image = root.querySelector("[data-image]");
   const message = root.querySelector("[data-message]");
   const size = root.querySelector("[data-size]");
+  const startCameraButton = root.querySelector("[data-start-camera]");
   let stream = null;
   let requestId = 0;
   let previousOverflow = "";
@@ -134,16 +136,14 @@
     document.body.style.overflow = previousOverflow;
     root.querySelector("[data-open]").focus();
   }
-  async function open() {
-    // getUserMedia is called inside the click handler, never on page load.
-    modal.hidden = false;
-    previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    root.querySelector("[data-close]").focus();
+  async function startCamera() {
+    // Called only by a direct tap; QR landing never starts a camera automatically.
+    startCameraButton.hidden = true;
     setMessage("Starting camera…");
     const currentRequest = ++requestId;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setMessage("Camera unavailable in this browser. Open this page on a phone over HTTPS.");
+      startCameraButton.hidden = false;
       return;
     }
     try {
@@ -162,13 +162,27 @@
     } catch (err) {
       if (currentRequest !== requestId) return;
       stopCamera();
+      startCameraButton.hidden = false;
       setMessage(err && err.name === "NotAllowedError"
         ? "Camera permission denied. Allow camera access in your browser and reopen this preview."
         : "Camera could not start. Try a phone browser with camera access.");
     }
   }
+  function open(startImmediately) {
+    if (!modal.hidden) return;
+    modal.hidden = false;
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    root.querySelector("[data-close]").focus();
+    if (startImmediately) startCamera();
+    else {
+      startCameraButton.hidden = false;
+      setMessage("Tap Start camera to see the wardrobe image over your room.");
+    }
+  }
 
-  root.querySelector("[data-open]").addEventListener("click", open);
+  root.querySelector("[data-open]").addEventListener("click", () => open(true));
+  startCameraButton.addEventListener("click", startCamera);
   root.querySelector("[data-close]").addEventListener("click", close);
   root.querySelector("[data-reset]").addEventListener("click", () => {
     offsetX = offsetY = 0;
@@ -197,6 +211,9 @@
     if (document.hidden && !modal.hidden) close();
   });
   window.addEventListener("pagehide", stopCamera);
+  // This flag is added by the wardrobe QR code, which opens this image preview
+  // on the phone without triggering a camera permission request on page load.
+  if (new URLSearchParams(window.location.search).get("view_image") === "1") open(false);
 })();
 </script>
 {% endif %}

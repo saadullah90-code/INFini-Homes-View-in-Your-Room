@@ -11,7 +11,8 @@
   - Does not modify product images, gallery, price, variants, or Add to Cart.
   - Does not embed any Shopify or Meshy secret/token/API key.
   - Does not assume a model exists -- the backend is the sole source of
-    truth for eligibility, model status, and publish state.
+    truth for 3D/AR eligibility, model status, and publish state. The
+    separate fit calculator is available even without a 3D model.
   - Does not fabricate a USDZ/iOS AR asset -- model-viewer generates Quick
     Look's USDZ from the actual published GLB when a supported iOS shopper
     taps AR. Camera permission and AR launch remain browser-controlled.
@@ -31,11 +32,11 @@
   data-shop-domain="{{ shop.permanent_domain }}"
   data-shop-storefront-domain="{{ request.host }}"
 >
-  <button type="button" class="viyr-button" data-viyr-open hidden>
+  <button type="button" class="viyr-button" data-viyr-open>
     <svg class="viyr-button__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
       <path fill="currentColor" d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.5 3.6-6.5 3.6-6.5-3.6L12 4.3ZM5 9.6l6 3.3v7.1l-6-3.3V9.6Zm8 10.4v-7.1l6-3.3v7.1l-6 3.3Z"/>
     </svg>
-    <span>View in Your Room</span>
+    <span data-viyr-button-label>Check Size &amp; Room Fit</span>
   </button>
 
   <div class="viyr-modal" data-viyr-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="View in Your Room">
@@ -68,6 +69,7 @@
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
 
+          <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
           <div class="viyr-qr" id="viyr-qr-{{ product.id }}" data-viyr-qr-wrap hidden>
             <p class="viyr-qr__label">Scan with your phone for AR</p>
@@ -78,6 +80,48 @@
           </div>
         </div>
       </div>
+      <section class="viyr-fit" data-viyr-fit hidden aria-label="Product size and room fit calculator">
+        <button type="button" class="viyr-qr-btn" data-viyr-size-back>← Back to preview and QR</button>
+        <h3>Enter your dimensions</h3>
+        <p>Compare your product with your wall, floor, or both. Measurements are in cm; no dimensions are estimated from the image.</p>
+        <label for="viyr-size-choice-{{ product.id }}">Product size</label>
+        <select id="viyr-size-choice-{{ product.id }}" data-viyr-size-choice>
+          {% for option in product.options_with_values %}
+            {% assign size_option_name = option.name | downcase %}
+            {% if size_option_name contains 'size' or size_option_name contains 'dimension' %}
+              {% for value in option.values %}
+                <option value="shopify:{{ value | escape }}">Shopify size: {{ value | escape }}</option>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+          <option value="custom">Custom size (planning only)</option>
+        </select>
+        <p class="viyr-fit__note" data-viyr-size-source>Enter the product's real measurements below. Shopify size labels alone do not tell us width, depth and height.</p>
+        <div class="viyr-fit__fields">
+          <label>Product width <input data-viyr-product-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+          <label>Product depth <input data-viyr-product-depth type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+          <label>Product height <input data-viyr-product-height type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+        </div>
+        <div class="viyr-fit__spaces">
+          <fieldset>
+            <legend>Your wall (optional)</legend>
+            <div class="viyr-fit__fields">
+              <label>Wall width <input data-viyr-wall-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+              <label>Wall height <input data-viyr-wall-height type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Your floor / room (optional)</legend>
+            <div class="viyr-fit__fields">
+              <label>Floor width <input data-viyr-floor-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+              <label>Floor depth <input data-viyr-floor-depth type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
+              <label>Gap behind product <input data-viyr-back-gap type="number" inputmode="decimal" min="0" max="100000" step="0.1" value="0"></label>
+            </div>
+          </fieldset>
+        </div>
+        <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
+        <p class="viyr-fit__note">Remaining width assumes centered placement. Back gap must be entered; wall width cannot determine it. Floor depth remaining is the space <strong>in front</strong> of the product. Allow extra clearance for doors, drawers and walking. A custom size is not an order or confirmed available variant. Camera/image preview is not to scale.</p>
+      </section>
     </div>
   </div>
 
@@ -141,6 +185,7 @@
   .viyr-modal__body {
     display: flex; flex-direction: column; height: 100%;
   }
+  .viyr-modal__body[hidden] { display: none; }
   @media (min-width: 720px) {
     .viyr-modal__body { flex-direction: row; }
   }
@@ -197,12 +242,36 @@
   .viyr-qr__fallback { font-size: 12px; color: #6b7280; }
   .viyr-qr__fallback[hidden] { display: none; }
 
+  .viyr-fit { overflow-y: auto; padding: 22px; color: #172333; }
+  .viyr-fit[hidden] { display: none; }
+  .viyr-fit h3 { margin: 14px 0 6px; font-size: 20px; }
+  .viyr-fit p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
+  .viyr-fit label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
+  .viyr-fit input, .viyr-fit select {
+    width: 100%; min-height: 40px; border: 1px solid #aab6bd; border-radius: 7px;
+    padding: 8px 10px; color: #172333; background: white; font: inherit;
+  }
+  .viyr-fit select { max-width: 440px; margin: 6px 0 10px; }
+  .viyr-fit__fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .viyr-fit__spaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+  .viyr-fit__spaces fieldset { margin: 0; min-width: 0; padding: 12px; border: 1px solid #d9e1e5; border-radius: 8px; }
+  .viyr-fit__spaces legend { padding: 0 4px; font-size: 13px; font-weight: 700; }
+  .viyr-fit__spaces .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .viyr-fit__result { padding: 12px; border-radius: 8px; background: #eaf2f1; font-size: 13px; line-height: 1.6; }
+  .viyr-fit__result p { margin: 0 0 5px; }
+  .viyr-fit__result p:last-child { margin-bottom: 0; }
+  .viyr-fit__result .viyr-fit__warning { color: #9a3412; font-weight: 600; }
+  .viyr-fit .viyr-fit__note { margin: 10px 0; font-size: 12px; color: #526270; }
+
   @media (max-width: 719px) {
     .viyr-modal__panel { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
     .viyr-modal__body { min-height: 0; }
     .viyr-viewer-wrap { flex: 1 1 auto; min-height: 240px; }
     .viyr-side { order: -1; flex: 0 0 auto; padding: 16px 20px 10px; }
     .viyr-ar-btn { width: 100%; padding: 15px 16px; font-size: 16px; }
+    .viyr-fit { padding: 18px; }
+    .viyr-fit__spaces { grid-template-columns: 1fr; }
+    .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   .viyr-debug {
@@ -303,6 +372,7 @@
 
   const els = {
     button: root.querySelector("[data-viyr-open]"),
+    buttonLabel: root.querySelector("[data-viyr-button-label]"),
     modal: root.querySelector("[data-viyr-modal]"),
     closeBtns: root.querySelectorAll("[data-viyr-close]"),
     viewerWrap: root.querySelector("[data-viyr-viewer-wrap]"),
@@ -321,6 +391,13 @@
     qrWrap: root.querySelector("[data-viyr-qr-wrap]"),
     qrCanvas: root.querySelector("[data-viyr-qr-canvas]"),
     qrFallback: root.querySelector("[data-viyr-qr-fallback]"),
+    body: root.querySelector(".viyr-modal__body"),
+    fit: root.querySelector("[data-viyr-fit]"),
+    fitOpen: root.querySelector("[data-viyr-size-open]"),
+    fitBack: root.querySelector("[data-viyr-size-back]"),
+    sizeChoice: root.querySelector("[data-viyr-size-choice]"),
+    sizeSource: root.querySelector("[data-viyr-size-source]"),
+    fitResult: root.querySelector("[data-viyr-fit-result]"),
   };
 
   let modelData = null; // populated once the backend confirms a published model
@@ -337,6 +414,113 @@
   // them resumes after `await ensureModelViewer()` -- can't all see
   // `modelViewerEl` as still null and each build their own <model-viewer>.
   let modelViewerBuildStarted = false;
+  let previousOverflow = "";
+  let lastSizeChoice = els.sizeChoice.value;
+  const sizeDrafts = new Map();
+  const productFields = ["product-width", "product-depth", "product-height"];
+
+  function fitField(name) {
+    return root.querySelector("[data-viyr-" + name + "]");
+  }
+  function fitNumber(name, allowZero) {
+    const raw = fitField(name).value.trim();
+    if (!raw) return null;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= (allowZero ? 0 : 0.1) && value <= 100000 ? value : NaN;
+  }
+  function fitFormat(value) {
+    return (Math.round(value * 10) / 10).toLocaleString("en-US", { maximumFractionDigits: 1 });
+  }
+  function fitLine(text, warning) {
+    const line = document.createElement("p");
+    line.textContent = text;
+    if (warning) line.className = "viyr-fit__warning";
+    els.fitResult.appendChild(line);
+  }
+  function fitClearance(label, available, occupied) {
+    const remaining = available - occupied;
+    fitLine(label + ": " + (remaining >= 0
+      ? fitFormat(remaining) + " cm free"
+      : fitFormat(-remaining) + " cm too small"), remaining < 0);
+  }
+  function renderFit() {
+    els.fitResult.replaceChildren();
+    const width = fitNumber("product-width");
+    const depth = fitNumber("product-depth");
+    const height = fitNumber("product-height");
+    if (![width, depth, height].every((v) => v !== null && Number.isFinite(v))) {
+      fitLine("Enter the product's width, depth and height in cm to calculate its space.", true);
+      return;
+    }
+    fitLine("Product: " + fitFormat(width) + " W × " + fitFormat(depth) + " D × " + fitFormat(height) + " H cm.");
+    fitLine("Floor footprint: " + fitFormat(width) + " × " + fitFormat(depth) + " cm = "
+      + (width * depth / 10000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + " m².");
+    const wallWidth = fitNumber("wall-width");
+    const wallHeight = fitNumber("wall-height");
+    const floorWidth = fitNumber("floor-width");
+    const floorDepth = fitNumber("floor-depth");
+    const backGap = fitNumber("back-gap", true);
+    if (backGap === null || !Number.isFinite(backGap)) {
+      fitLine("Enter a valid gap behind the product (0 cm if placed against the wall).", true);
+      return;
+    }
+    fitLine("Gap behind product: " + fitFormat(backGap) + " cm (entered by you).");
+    const wallStarted = wallWidth !== null || wallHeight !== null;
+    const floorStarted = floorWidth !== null || floorDepth !== null;
+    if (wallStarted && [wallWidth, wallHeight].every((v) => v !== null && Number.isFinite(v))) {
+      fitClearance("Wall width remaining (total, both sides)", wallWidth, width);
+      fitClearance("Wall height remaining above product", wallHeight, height);
+    } else if (wallStarted) {
+      fitLine("Enter both wall width and height as valid positive numbers to see wall clearance.", true);
+    }
+    if (floorStarted && [floorWidth, floorDepth].every((v) => v !== null && Number.isFinite(v))) {
+      fitClearance("Floor width remaining (total, both sides)", floorWidth, width);
+      fitClearance("Free floor depth in front of product", floorDepth, depth + backGap);
+      fitLine("Product footprint covers " + (width * depth / (floorWidth * floorDepth) * 100)
+        .toLocaleString("en-US", { maximumFractionDigits: 1 }) + "% of the entered floor area.");
+    } else if (floorStarted) {
+      fitLine("Enter both floor width and depth as valid positive numbers to see floor clearance.", true);
+    }
+    if (!wallStarted && !floorStarted) fitLine("Add wall measurements, floor measurements, or both to see remaining space.");
+  }
+  function changeSizeChoice() {
+    sizeDrafts.set(lastSizeChoice, productFields.map((field) => fitField(field).value));
+    lastSizeChoice = els.sizeChoice.value;
+    let values = sizeDrafts.get(lastSizeChoice) || ["", "", ""];
+    if (lastSizeChoice === "model" && modelData && modelData.dimensions && !sizeDrafts.has("model")) {
+      const dims = modelData.dimensions;
+      values = [dims.width, dims.depth, dims.height];
+    }
+    productFields.forEach((field, index) => { fitField(field).value = values[index]; });
+    els.sizeSource.textContent = lastSizeChoice === "model"
+      ? "Reference dimensions from the approved 3D preview (not automatically valid for other variants). Edit if your selected product differs."
+      : lastSizeChoice === "custom"
+      ? "Custom measurements are for planning only, not a confirmed orderable size."
+      : "Shopify lists this size name, but has no verified width/depth/height here. Enter its actual measurements below.";
+    renderFit();
+  }
+  function addReferenceSize() {
+    const dims = modelData && modelData.dimensions;
+    if (!dims || dims.unit !== "cm" || !["width", "depth", "height"].every((key) =>
+      typeof dims[key] === "number" && Number.isFinite(dims[key]) && dims[key] > 0)) return;
+    if (els.sizeChoice.querySelector('[value="model"]')) return;
+    const option = document.createElement("option");
+    option.value = "model";
+    option.textContent = "3D reference size — " + dims.width + " W × " + dims.depth + " D × " + dims.height + " H cm";
+    els.sizeChoice.insertBefore(option, els.sizeChoice.firstChild);
+    // Prefill only if no Shopify Size option exists and the customer has
+    // not already typed measurements. Never overwrite an in-progress form.
+    if (els.sizeChoice.options.length === 2 && productFields.every((field) => !fitField(field).value)) {
+      els.sizeChoice.value = "model";
+      changeSizeChoice();
+    }
+  }
+  function showFitPanel() {
+    els.body.hidden = true;
+    els.fit.hidden = false;
+    renderFit();
+    els.fitBack.focus();
+  }
 
   function loadScriptOnce(src) {
     window.__viyrScriptPromises = window.__viyrScriptPromises || {};
@@ -453,13 +637,16 @@
       setDebug("model", data.available ? "published" : "not available");
       if (data.available && data.modelUrl) {
         modelData = data;
+        addReferenceSize();
+        els.buttonLabel.textContent = "View in Your Room & Check Size";
         els.button.hidden = false;
 
       } else if (data.available) {
         throw new Error("Published model response has no model URL");
       }
       availabilityChecking = false;
-      // QR links can open the 3D modal, never AR/camera without a user tap.
+      // QR links can open a preview or the calculator, never AR/camera
+      // without a user tap.
       if ((!els.modal.hidden || (modelData && new URLSearchParams(window.location.search).get("view_ar") === "1"))
         && root.isConnected) openModal();
     } catch (err) {
@@ -564,13 +751,11 @@
         ? "Tap to open Apple's Quick Look. Your browser may ask for camera access."
         : "Tap to place this product in your room. Your browser may ask for camera access.");
     } else {
-      // Desktop: the shopper explicitly chooses when to show the handoff QR.
+      // Desktop: keep the phone handoff next to the fit-calculator action.
       els.arBtn.hidden = true;
       showArNote("");
-      // A published model can be opened on a phone even when this desktop
-      // cannot render WebGL. QR availability must not depend on viewer load.
-      els.qrBtn.hidden = !modelData;
-      if (!modelData) resetQr();
+      // When no 3D model exists, hand off to the independent fit calculator.
+      els.qrBtn.hidden = false;
     }
   }
 
@@ -605,13 +790,23 @@
     page.hash = "";
     const variant = selectedVariantId();
     if (variant) page.searchParams.set("variant", variant);
-    page.searchParams.set("view_ar", "1");
+    // Wardrobe experiment only: if its separate camera-image test block is
+    // installed, hand off to that block instead of reopening this 3D viewer.
+    // Other products and stores without that block retain the original 3D QR.
+    const imageTestInstalled = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly"
+      && !!document.getElementById("viyr-image-test-" + productId);
+    page.searchParams.set(imageTestInstalled ? "view_image" : modelData ? "view_ar" : "view_dimensions", "1");
     return page.toString();
   }
 
   function renderDesktopQr() {
     const request = ++qrRequest;
     const qrTarget = productPageUrl();
+    const imageHandoff = new URL(qrTarget).searchParams.has("view_image");
+    const qrLabel = els.qrWrap.querySelector(".viyr-qr__label");
+    if (qrLabel) qrLabel.textContent = imageHandoff
+      ? "Scan with your phone for the 2D wardrobe camera-image test"
+      : modelData ? "Scan with your phone for AR" : "Scan with your phone to enter room dimensions";
     els.qrWrap.hidden = false;
     els.qrCanvas.replaceChildren();
     els.qrFallback.hidden = true;
@@ -652,8 +847,6 @@
   }
 
   async function openModal() {
-    if (!modelData && !eligible) return;
-
     if (viewerState === "error" && modelViewerEl) {
       modelViewerEl.remove();
       modelViewerEl = null;
@@ -662,6 +855,8 @@
     }
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
+    if (!els.fit.hidden) return; // leave an open calculator undisturbed by API refreshes
+    els.body.hidden = false;
     els.title.textContent = (modelData && modelData.title) || productTitle;
     renderModelDetails();
     els.hint.hidden = !modelData;
@@ -673,6 +868,12 @@
     resetQr();
     els.qrBtn.hidden = true;
     document.body.style.overflow = "hidden";
+    if (!isMobileDevice()) {
+      els.qrBtn.hidden = false;
+      els.qrBtn.textContent = "Hide QR code";
+      els.qrBtn.setAttribute("aria-expanded", "true");
+      renderDesktopQr();
+    }
 
     if (!modelData) {
       els.loading.hidden = !availabilityChecking;
@@ -681,7 +882,8 @@
         ? "Checking whether this product's 3D model is ready…"
         : availabilityFailed
         ? "We can't check this product's 3D model right now. Retry the availability check."
-        : "The 3D model for this product isn't available yet. Retry later to check again; AR cannot open without a published model.";
+        : "No published 3D model for this product yet. You can still enter its real dimensions and check how it fits.";
+      els.qrBtn.hidden = isMobileDevice();
       return;
     }
 
@@ -726,14 +928,24 @@
 
   function closeModal() {
     resetQr();
+    els.fit.hidden = true;
+    els.body.hidden = false;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
 
   els.button.addEventListener("click", openModal);
+  els.fitOpen.addEventListener("click", showFitPanel);
+  els.fitBack.addEventListener("click", () => {
+    els.fit.hidden = true;
+    els.body.hidden = false;
+    openModal();
+  });
+  els.sizeChoice.addEventListener("change", changeSizeChoice);
+  root.querySelectorAll(".viyr-fit input").forEach((field) => field.addEventListener("input", renderFit));
   els.qrBtn.addEventListener("click", () => {
-    if (isMobileDevice() || !modelData || els.modal.hidden) return;
+    if (isMobileDevice() || els.modal.hidden) return;
     if (!els.qrWrap.hidden) {
       resetQr();
     } else {
@@ -757,6 +969,8 @@
       availabilityFailed = false;
       if (data.available && !data.modelUrl) throw new Error("Published model response has no model URL");
       modelData = data.available ? data : null;
+      if (modelData) addReferenceSize();
+      els.buttonLabel.textContent = modelData ? "View in Your Room & Check Size" : "Check Size & Room Fit";
       setDebug("model", modelData ? "published" : "not available");
     } catch (err) {
       availabilityFailed = true;
@@ -790,6 +1004,10 @@
     if (e.key === "Escape" && !els.modal.hidden) closeModal();
   });
 
+  if (new URLSearchParams(window.location.search).get("view_dimensions") === "1") {
+    openModal();
+    showFitPanel();
+  }
   initAvailability();
   }
 

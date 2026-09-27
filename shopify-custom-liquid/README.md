@@ -8,16 +8,17 @@
 4. Wahan **Custom Liquid** section/block add karo (Add block → Custom Liquid).
 5. `view-in-your-room.liquid` ka **complete code** copy karke paste karo.
 6. **Save** karo.
-7. Ek eligible product open karo (Furniture ya Mattress category wala).
+7. Kisi bhi product ka page kholo. Calculator sab product pages par hai; 3D/AR sirf published models par hai.
 8. **"View in Your Room"** button test karo.
-9. Desktop par **View in Your Room** dabao → viewer khulay → **Show QR code** dabao → phone se scan karo. **Hide QR code** se band karo; modal close/reopen par QR reset hota hai.
+9. Desktop par **Check Size & Room Fit** (ya model ho to **View in Your Room & Check Size**) dabao → QR aur **Enter your dimensions** button saath nazar aayenge. QR phone se scan karo; **Hide QR code** se QR band kar sakte ho.
 10. Mobile/iPad par viewer khol kar **View in your space (AR)** tap karo (agar browser/device support karta ho). QR scan sirf product page/viewer kholta hai, camera automatically nahin.
 
-Sirf **ek hi file** paste karni hai — koi doosri JS/CSS file alag se add karne ki zaroorat nahi.
+Core viewer aur calculator ke liye **ek hi file** paste karni hai — koi doosri JS/CSS file alag se add karne ki zaroorat nahi. White wardrobe camera-image test optional second block hai.
 
 ## What you need to know before relying on this
 
-- **Only a published model can be previewed or handed off to AR.** The backend decides eligibility and availability. An eligible product may display the button before its model is published; the modal then clearly says it is unavailable and offers **Retry**. A failed availability check also offers Retry. Neither case creates a pretend model or QR code.
+- **Only a published model can be previewed or handed off to AR.** The backend decides 3D/AR eligibility and availability. **View in Your Room** and its independent **Enter your dimensions** calculator appear on every product using the product template that contains this Custom Liquid block, even with no model. The modal clearly says when 3D is unavailable; a desktop QR for such products opens the calculator on a phone, not AR.
+- **Product sizes need real measurements.** If Shopify has a Size/Dimensions option, its values appear in the calculator's picker. The name alone does not supply width/depth/height, so customers enter those values unless the API offers a published reference model with a clearly labeled reference size. Custom sizes are planning estimates, not purchasable variants. No dimensions come from an image. Wall width/height and floor width/depth can be entered independently; the gap behind furniture must be supplied separately (default 0 cm).
 - **Modeled size is not a selected-variant promise.** The specific generated mattress preview is **200W × 210L × 20H cm only**. It is not verified for other mattress variants, and choosing a different Shopify variant does not resize the 3D model. Where the API supplies `dimensions` (`width`, `height`, `depth`, `unit`) and/or `modelNotice`, the modal displays the modeled preview dimensions and notice; the size disclaimer remains visible even if metadata is missing. Do not use this preview as an exact measurement of a different variant.
 - **AR support depends on the actual published GLB and device/browser.** Mobile/iPad shows a direct tap-to-launch AR button only after the model loads; unsupported browsers show a note instead. On supported iOS, model-viewer may generate Quick Look USDZ from the GLB at tap time; there is no separate verified USDZ asset or guarantee Quick Look works on every device. No automatic camera activation occurs.
 - **Replit is currently the backend.** The one line to change later, when moving to Railway, is `VIEW_IN_YOUR_ROOM_API` near the top of the `<script>` block in `view-in-your-room.liquid`. Nothing else in the file needs to change.
@@ -30,18 +31,20 @@ Shopify product page
   → Custom Liquid block (this file)
   → GET {backend}/api/storefront/model?shop=...&product_handle={{ product.handle }}
   → backend checks: product eligible? model PUBLISHED? real GLB URL exists?
-   → eligible, available:false → button may show an unavailable/retry state
-   → available:true   → button shows → click opens a modal with <model-viewer>
-                          → desktop: Show QR code reveals handoff QR on request
+    → available:false → button opens the size calculator and a truthful 3D-unavailable state
+    → available:true  → button opens a modal with <model-viewer> and separate size calculator
+                           → desktop: QR and Enter your dimensions appear together
                          → mobile: opening the page with ?view_ar=1 (e.g. from
                            the QR scan) auto-opens the viewer once availability
                            is confirmed
 ```
 
-The QR points to the canonical Shopify product page with `view_ar=1` and the selected numeric `variant` query parameter (from the page URL or Shopify product form, if available). It never carries a token or secret; debug and unrelated URL parameters are excluded. Scanning opens the viewer, **not** AR automatically.
+The QR points to the canonical Shopify product page with the selected numeric `variant` query parameter (from the page URL or Shopify product form, if available). It uses `view_ar=1` for published models, `view_dimensions=1` when no model is available, or `view_image=1` for the optional wardrobe camera-image test. It never carries a token or secret; debug and unrelated URL parameters are excluded. Scanning never starts AR or a camera automatically.
 
 ## White wardrobe camera/image experiment (separate block)
 
-`wardrobe-camera-test.liquid` is an **optional, isolated test** for the white two-door wardrobe product only. In Shopify's product template, add a **second Custom Liquid block** and paste the entire file there. Do **not** replace or edit the existing `view-in-your-room.liquid` block. It adds its own clearly labeled test button only on the matching wardrobe product page.
+`wardrobe-camera-test.liquid` is an **optional, isolated visual test** for the white two-door wardrobe product only. In Shopify's product template, add a **second Custom Liquid block** and paste the entire file there. Update the **original** Custom Liquid block with the current `view-in-your-room.liquid` too: its wardrobe QR now detects the separate image test and links to `?view_image=1` instead of `?view_ar=1`. All products get the calculator from the original block. Both updated Shopify blocks must be saved before the new QR behavior exists on the live store.
 
-The button opens the device camera after a tap and overlays the transparent white-wardrobe front PNG already uploaded to this product. Drag the image or use the size slider; closing the overlay stops the camera. Camera access requires a supported browser, HTTPS, and the shopper's permission. This is a **2D visual experiment** without floor tracking, real-world scale, or 3D/AR placement; it is always the white image even when another colour is selected. Remove the second block to end the experiment without changing the original 3D flow.
+The live Shopify wardrobe product has Color and Assembly variants, **not** Size variants. Its published 3D reference has 80 W × 40 D × 185 H cm dimensions. The calculator is in the original block; it never estimates measurements from this image.
+
+The button opens the device camera after a tap and overlays the transparent white-wardrobe front PNG already uploaded to this product. Drag the image or use the **visual-only** image-size slider; closing the overlay stops the camera. Scanning the new QR opens the image preview on a phone and waits for a separate **Start camera** tap — camera permission cannot be triggered automatically from a QR. Camera access requires a supported browser, HTTPS, and the shopper's permission. This is a **2D visual experiment** without floor tracking, real-world scale, or 3D/AR placement; it is always the white image even when another colour is selected. Remove the second block to end the experiment; without it, the original 3D QR behavior resumes.
