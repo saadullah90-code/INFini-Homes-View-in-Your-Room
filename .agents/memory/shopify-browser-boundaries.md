@@ -8,6 +8,12 @@ Validate Shopify integration using a browser cross-origin request, not only dire
 
 **How to apply:** Compare real Shopify-rendered attributes with endpoint validation. Test the browser preflight and normalize only verified merchant image paths. Treat public-catalog imports separately from evidence that Liquid actually connected; disclose browser fixtures as fixtures, not live-theme verification.
 
+After importing or forking this project, compare the backend URL in the actual Shopify-rendered snippet with the current verified deployment URL.
+
+**Why:** A pasted snippet can continue calling an older deployment while the new dashboard successfully imports the public catalog. The old health endpoint may return 200 even though its storefront routes fail.
+
+**How to apply:** Inspect live Shopify HTML, verify the product-specific storefront endpoint and CORS, and distinguish a repository snippet fix from updating the separately pasted Shopify block.
+
 Customer-facing QR handoffs must target a verified public deployment or Shopify product URL, not the preview's current origin.
 
 **Why:** A QR generated in the workspace from location.origin led shoppers to a Replit login page despite the published app being public.
