@@ -44,7 +44,10 @@
             View in your space (AR)
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
-          <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>Start camera (2D image overlay)</button>
+          <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
+          <label class="viyr-image-size" data-viyr-preview-size-wrap hidden>Image size — pinch or slide
+            <input type="range" data-viyr-preview-size min="50" max="240" value="100">
+          </label>
 
           <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
@@ -110,11 +113,10 @@
       <p data-viyr-camera-note role="status" aria-live="polite"></p>
       <button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
       <label class="viyr-image-size" data-viyr-image-size-wrap>Visual image size
-        <input type="range" data-viyr-image-size min="50" max="180" value="100">
+        <input type="range" data-viyr-image-size min="50" max="240" value="100">
       </label>
     </div>
   </div>
-  <pre class="viyr-debug" data-viyr-debug hidden></pre>
 </div>
 
 <style>
@@ -164,12 +166,12 @@
 
   .viyr-viewer-wrap {
     position: relative; flex: 1 1 60%;
-    min-height: 320px; background: #f3f4f6;
+    min-height: 320px; background: #f3f4f6; overflow: hidden;
   }
   .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
   .viyr-viewer-wrap model-viewer[hidden] { display: none; }
   .viyr-camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .viyr-camera-stage { position: fixed; inset: 0; z-index: 2147483001; background: #111; color: #fff; }
+  .viyr-camera-stage { position: fixed; inset: 0; z-index: 2147483001; background: #111; color: #fff; overflow: hidden; }
   .viyr-camera-stage[hidden] { display: none; }
   .viyr-camera-stage .viyr-product-image { z-index: 1; }
   .viyr-camera-stage__back { position: absolute; z-index: 2; top: max(16px, env(safe-area-inset-top)); left: 16px; padding: 12px 16px; border: 0; border-radius: 8px; background: #fff; color: #111827; font-size: 14px; font-weight: 600; }
@@ -268,8 +270,6 @@
     .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
-  .viyr-debug { margin: 14px 0; padding: 14px; background: #0b1220; color: #d7e6ff; font: 12px/1.5 monospace; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow: auto; }
-  .viyr-debug[hidden] { display: none; }
 </style>
 
 <script>
@@ -294,7 +294,6 @@
   const productTitle = root.dataset.productTitle || "";
   const productUrl = "/products/" + encodeURIComponent(productHandle);
   let productImageUrls = [];
-  let imageParseError = "";
   try {
     const images = JSON.parse(root.dataset.productImageUrls || "[]");
     if (!Array.isArray(images)) throw new Error("Images are not an array");
@@ -309,20 +308,8 @@
       throw new Error("Unsupported image host or path");
     });
   } catch (err) {
-    imageParseError = String(err);
+    console.warn("[View in Your Room] Invalid product image URLs:", err);
   }
-
-  const debugPanel = new URLSearchParams(window.location.search).get("view_ar_debug") === "1"
-    ? root.querySelector("[data-viyr-debug]") : null;
-  const debugValues = {};
-  if (debugPanel) debugPanel.hidden = false;
-  function setDebug(field, value) {
-    if (!debugPanel) return;
-    debugValues[field] = value;
-    debugPanel.textContent = "Shop: " + shopStorefrontDomain + " / " + productHandle + "\n"
-      + Object.entries(debugValues).map(([key, item]) => key + ": " + item).join("\n");
-  }
-  setDebug("images", imageParseError || productImageUrls.length + " Shopify CDN URL(s)");
 
   const els = {
     button: root.querySelector("[data-viyr-open]"),
@@ -339,7 +326,8 @@
     cameraBack: root.querySelector("[data-viyr-stop-camera]"),
     cameraNote: root.querySelector("[data-viyr-camera-note]"),
     imageSize: root.querySelector("[data-viyr-image-size]"),
-    imageSizeWrap: root.querySelector("[data-viyr-image-size-wrap]"),
+    previewSize: root.querySelector("[data-viyr-preview-size]"),
+    previewSizeWrap: root.querySelector("[data-viyr-preview-size-wrap]"),
     loading: root.querySelector("[data-viyr-loading]"),
     error: root.querySelector("[data-viyr-error]"),
     errorMessage: root.querySelector("[data-viyr-error-message]"),
@@ -398,16 +386,17 @@
     els.cameraStage.hidden = true;
     els.cameraStage.setAttribute("aria-hidden", "true");
     els.modal.setAttribute("aria-hidden", els.modal.hidden ? "true" : "false");
-    els.cameraButton.hidden = !useProductImage() || !isWardrobe || !isMobileDevice();
+    els.cameraButton.hidden = !useProductImage() || !isMobileDevice();
   }
   async function startCamera() {
-    if (els.modal.hidden || !isWardrobe || !useProductImage() || !isMobileDevice()) return;
+    if (els.modal.hidden || !useProductImage() || !isMobileDevice()) return;
     const request = ++cameraRequest;
     els.cameraStage.hidden = false;
     els.cameraStage.setAttribute("aria-hidden", "false");
     els.modal.setAttribute("aria-hidden", "true");
     els.cameraBack.focus();
     els.cameraImage.src = productImageUrls[0];
+    els.cameraImage.style.opacity = isWardrobe ? "1" : "0.8";
     positionProductImage();
     els.cameraNote.textContent = "Starting camera…";
     els.cameraRetry.hidden = true;
@@ -443,6 +432,7 @@
     }
   }
   function positionProductImage() {
+    els.previewSize.value = els.imageSize.value;
     [els.productImage, els.cameraImage].forEach((image) => {
       image.style.setProperty("--move-x", imageOffsetX + "px");
       image.style.setProperty("--move-y", imageOffsetY + "px");
@@ -459,11 +449,12 @@
     if (els.productImage.src !== productImageUrls[0]) els.productImage.src = productImageUrls[0];
     els.hint.hidden = false;
     els.hint.textContent = isWardrobe
-      ? "White wardrobe PNG • 2D visual preview, not to scale."
-      : "Product photo • 2D visual preview, not to scale.";
+      ? "White wardrobe PNG • pinch or drag to adjust; not to scale."
+      : "Product photo • pinch or drag to adjust; not to scale.";
     els.arBtn.hidden = true;
     showArNote("");
-    els.cameraButton.hidden = !isWardrobe || !isMobileDevice();
+    els.cameraButton.hidden = !isMobileDevice();
+    els.previewSizeWrap.hidden = false;
   }
   function updateButtonLabel() {
     els.buttonLabel.textContent = useProductImage()
@@ -633,15 +624,12 @@
     try {
       const data = await fetchModelAvailability();
       availabilityFailed = false;
-      setDebug("backend", "online");
       eligible = data.eligible;
-      setDebug("eligible", eligible ? "eligible" : "not in eligible catalog");
       els.button.hidden = !eligible;
       if (!eligible) {
         availabilityChecking = false;
         return;
       }
-      setDebug("model", data.available ? "published" : "not available");
       if (data.available && data.modelUrl) {
         modelData = data;
         addReferenceSize();
@@ -660,8 +648,6 @@
       availabilityFailed = true;
       availabilityChecking = false;
       els.button.hidden = true;
-      setDebug("backend", "offline");
-      setDebug("model", "check failed: " + String(err));
       console.warn("[View in Your Room] availability check failed:", err);
       if (!els.modal.hidden) closeModal();
     }
@@ -875,6 +861,7 @@
     }
     els.productImage.hidden = true;
     els.cameraButton.hidden = true;
+    els.previewSizeWrap.hidden = true;
     if (modelViewerEl) modelViewerEl.hidden = false;
     if (!modelData) {
       els.loading.hidden = !availabilityChecking;
@@ -913,7 +900,6 @@
         viewerTimer = setTimeout(() => {
           if (viewerState === "loading") {
             onViewerError();
-            setDebug("model", "3D model loading timed out");
           }
         }, 20000);
       } catch (err) {
@@ -971,10 +957,8 @@
       modelData = data.available ? data : null;
       if (modelData) addReferenceSize();
       updateButtonLabel();
-      setDebug("model", modelData ? "published" : "not available");
     } catch (err) {
       availabilityFailed = true;
-      setDebug("model", "check failed: " + String(err));
       console.warn("[View in Your Room] availability retry failed:", err);
     } finally {
       availabilityChecking = false;
@@ -1015,20 +999,49 @@
   els.cameraRetry.addEventListener("click", startCamera);
   els.cameraBack.addEventListener("click", stopCamera);
   els.imageSize.addEventListener("input", positionProductImage);
+  els.previewSize.addEventListener("input", () => {
+    els.imageSize.value = els.previewSize.value;
+    positionProductImage();
+  });
   [els.productImage, els.cameraImage].forEach((image) => {
+    const points = new Map();
+    let pinch = null;
     image.addEventListener("pointerdown", (event) => {
       if (image.hidden) return;
-      imageDrag = { id: event.pointerId, x: event.clientX - imageOffsetX, y: event.clientY - imageOffsetY };
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
       image.setPointerCapture(event.pointerId);
+      if (points.size === 1) imageDrag = { id: event.pointerId, x: event.clientX - imageOffsetX, y: event.clientY - imageOffsetY };
+      if (points.size === 2) {
+        const [a, b] = [...points.values()];
+        pinch = { distance: Math.hypot(a.x - b.x, a.y - b.y), size: Number(els.imageSize.value) };
+        imageDrag = null;
+      }
     });
     image.addEventListener("pointermove", (event) => {
+      if (!points.has(event.pointerId)) return;
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (points.size === 2 && pinch && pinch.distance > 0) {
+        const [a, b] = [...points.values()];
+        els.imageSize.value = Math.max(50, Math.min(240, Math.round(pinch.size * Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance)));
+        positionProductImage();
+        return;
+      }
       if (!imageDrag || imageDrag.id !== event.pointerId) return;
       imageOffsetX = event.clientX - imageDrag.x;
       imageOffsetY = event.clientY - imageDrag.y;
       positionProductImage();
     });
-    image.addEventListener("pointerup", () => { imageDrag = null; });
-    image.addEventListener("pointercancel", () => { imageDrag = null; });
+    function endPointer(event) {
+      points.delete(event.pointerId);
+      pinch = null;
+      imageDrag = null;
+      if (points.size === 1) {
+        const [id, point] = [...points.entries()][0];
+        imageDrag = { id, x: point.x - imageOffsetX, y: point.y - imageOffsetY };
+      }
+    }
+    image.addEventListener("pointerup", endPointer);
+    image.addEventListener("pointercancel", endPointer);
   });
   window.addEventListener("pagehide", stopCamera);
   document.addEventListener("visibilitychange", () => {
