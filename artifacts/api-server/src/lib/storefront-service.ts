@@ -79,6 +79,7 @@ export function computeImageSetHash(imageUrls: string[]): string {
 }
 
 export interface StorefrontModelResult {
+  eligible: boolean;
   available: boolean;
   productHandle?: string;
   title?: string;
@@ -105,8 +106,8 @@ export async function getStorefrontModel(
     .from(productsTable)
     .where(eq(productsTable.handle, handle));
 
-  if (!product || !product.eligible) {
-    return { available: false };
+  if (!product || !product.eligible || product.source === "sample") {
+    return { eligible: false, available: false };
   }
 
   const [model] = await db
@@ -116,7 +117,7 @@ export async function getStorefrontModel(
 
   if (!model || model.status !== "PUBLISHED" || !model.optimizedModelUrl || !model.arToken ||
       (product.source !== "sample" && model.provider === "mock")) {
-    return { available: false };
+    return { eligible: true, available: false };
   }
 
   const prepared = model.provider === "prepared" ? await getPreparedModel(product.handle) : null;
@@ -124,6 +125,7 @@ export async function getStorefrontModel(
     throw new Error(`Published prepared model registry entry missing for ${product.handle}`);
   }
   return {
+    eligible: true,
     available: true,
     productHandle: product.handle,
     title: product.title,

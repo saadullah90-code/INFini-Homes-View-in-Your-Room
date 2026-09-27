@@ -1588,7 +1588,7 @@ export const getGetStorefrontModelUrl = (params: GetStorefrontModelParams,) => {
 }
 
 /**
- * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state -- only whether a published model exists and, if so, its public viewer URLs.
+ * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state. `eligible` is true only for an already registered Furniture/Mattress product; `available` indicates whether that product also has a published model.
  * @summary Public, shop-restricted lookup of a product's published 3D/AR model
  */
 export const getStorefrontModel = async (params: GetStorefrontModelParams, options?: Parameters<typeof customFetch>[1]): Promise<StorefrontModel> => {

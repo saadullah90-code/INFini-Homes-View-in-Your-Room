@@ -382,8 +382,9 @@ paths:
       description: >
         Read-only. Restricted to an allowlisted shop origin. Never exposes
         Shopify or Meshy credentials, database identifiers, or internal
-        generation-pipeline state -- only whether a published model exists
-        and, if so, its public viewer URLs.
+        generation-pipeline state. `eligible` is true only for an already
+        registered Furniture/Mattress product; `available` indicates whether
+        that product also has a published model.
       parameters:
         - name: shop
           in: query
@@ -765,9 +766,11 @@ components:
     StorefrontModel:
       type: object
       description: >
-        Only ever contains public, already-published data. `available: false`
-        carries no other fields.
+        Only ever contains public storefront eligibility and already-published
+        model data. Unknown or ineligible products have eligible:false and
+        available:false.
       properties:
+        eligible: { type: boolean }
         available: { type: boolean }
         productHandle: { type: string }
         title: { type: string }
@@ -780,6 +783,7 @@ components:
             - type: "null"
         modelNotice: { type: string }
       required:
+        - eligible
         - available
 
     StorefrontConnectRequest:

@@ -458,7 +458,7 @@ export const GetLiquidSourceResponse = zod.object({
 
 
 /**
- * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state -- only whether a published model exists and, if so, its public viewer URLs.
+ * Read-only. Restricted to an allowlisted shop origin. Never exposes Shopify or Meshy credentials, database identifiers, or internal generation-pipeline state. `eligible` is true only for an already registered Furniture/Mattress product; `available` indicates whether that product also has a published model.
  * @summary Public, shop-restricted lookup of a product's published 3D/AR model
  */
 export const GetStorefrontModelQueryParams = zod.object({
@@ -467,6 +467,7 @@ export const GetStorefrontModelQueryParams = zod.object({
 })
 
 export const GetStorefrontModelResponse = zod.object({
+  "eligible": zod.boolean(),
   "available": zod.boolean(),
   "productHandle": zod.string().optional(),
   "title": zod.string().optional(),
@@ -480,7 +481,7 @@ export const GetStorefrontModelResponse = zod.object({
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
 }).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
   "modelNotice": zod.string().optional()
-}).describe('Only ever contains public, already-published data. `available: false` carries no other fields.\n')
+}).describe('Only ever contains public storefront eligibility and already-published model data. Unknown or ineligible products have eligible:false and available:false.\n')
 
 
 /**

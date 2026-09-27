@@ -2,17 +2,13 @@
   class="viyr-root"
   id="viyr-root-{{ product.id }}"
   data-viyr-instance
-  data-product-id="{{ product.id }}"
   data-product-handle="{{ product.handle }}"
   data-product-title="{{ product.title | escape }}"
-  data-product-type="{{ product.type | escape }}"
-  data-product-vendor="{{ product.vendor | escape }}"
-  data-product-url="{{ product.url }}"
   data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
   data-shop-domain="{{ shop.permanent_domain }}"
   data-shop-storefront-domain="{{ request.host }}"
 >
-  <button type="button" class="viyr-button" data-viyr-open>
+  <button type="button" class="viyr-button" data-viyr-open hidden>
     <svg class="viyr-button__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
       <path fill="currentColor" d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.5 3.6-6.5 3.6-6.5-3.6L12 4.3ZM5 9.6l6 3.3v7.1l-6-3.3V9.6Zm8 10.4v-7.1l6-3.3v7.1l-6 3.3Z"/>
     </svg>
@@ -26,7 +22,6 @@
 
       <div class="viyr-modal__body">
         <div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
-          <video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
           <img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product image" draggable="false">
           <div class="viyr-state viyr-state--loading" data-viyr-loading>
             <div class="viyr-spinner" aria-hidden="true"></div>
@@ -50,10 +45,6 @@
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
           <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>Start camera (2D image overlay)</button>
-          <p class="viyr-ar-note" data-viyr-camera-note hidden role="status" aria-live="polite"></p>
-          <label class="viyr-image-size" data-viyr-image-size-wrap hidden>Visual image size
-            <input type="range" data-viyr-image-size min="50" max="180" value="100">
-          </label>
 
           <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
@@ -111,6 +102,18 @@
     </div>
   </div>
 
+  <div class="viyr-camera-stage" data-viyr-camera-stage hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Camera image preview">
+    <video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
+    <img class="viyr-product-image" data-viyr-camera-image alt="{{ product.title | escape }} — 2D overlay" draggable="false">
+    <button type="button" class="viyr-camera-stage__back" data-viyr-stop-camera>← Back to preview</button>
+    <div class="viyr-camera-stage__controls">
+      <p data-viyr-camera-note role="status" aria-live="polite"></p>
+      <button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
+      <label class="viyr-image-size" data-viyr-image-size-wrap>Visual image size
+        <input type="range" data-viyr-image-size min="50" max="180" value="100">
+      </label>
+    </div>
+  </div>
   <pre class="viyr-debug" data-viyr-debug hidden></pre>
 </div>
 
@@ -166,6 +169,14 @@
   .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
   .viyr-viewer-wrap model-viewer[hidden] { display: none; }
   .viyr-camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .viyr-camera-stage { position: fixed; inset: 0; z-index: 2147483001; background: #111; color: #fff; }
+  .viyr-camera-stage[hidden] { display: none; }
+  .viyr-camera-stage .viyr-product-image { z-index: 1; }
+  .viyr-camera-stage__back { position: absolute; z-index: 2; top: max(16px, env(safe-area-inset-top)); left: 16px; padding: 12px 16px; border: 0; border-radius: 8px; background: #fff; color: #111827; font-size: 14px; font-weight: 600; }
+  .viyr-camera-stage__controls { position: absolute; z-index: 2; bottom: max(16px, env(safe-area-inset-bottom)); left: 16px; right: 16px; padding: 12px; border-radius: 12px; background: rgba(17,24,39,.82); font-size: 12px; }
+  .viyr-camera-stage__controls p { margin: 0 0 8px; }
+  .viyr-camera-stage__controls .viyr-qr-btn { margin: 0 0 8px; }
+  .viyr-camera-stage .viyr-image-size { color: #fff; }
   .viyr-product-image {
     position: absolute; top: 50%; left: 50%; max-width: 86%; max-height: 86%;
     width: auto; height: auto; object-fit: contain; cursor: grab; touch-action: none;
@@ -267,7 +278,6 @@
 
   const API_BASE = VIEW_IN_YOUR_ROOM_API.replace(/\/$/, "");
   const STOREFRONT_ENDPOINT = API_BASE + "/api/storefront/model";
-  const CONNECT_ENDPOINT = API_BASE + "/api/storefront/connect";
   const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
   const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
 
@@ -281,11 +291,7 @@
 
   const productHandle = root.dataset.productHandle;
   const shopStorefrontDomain = root.dataset.shopStorefrontDomain || window.location.hostname;
-  const productId = root.dataset.productId || "";
   const productTitle = root.dataset.productTitle || "";
-  const productType = root.dataset.productType || "";
-  const productVendor = root.dataset.productVendor || "";
-  const productUrl = "/products/" + encodeURIComponent(productHandle);
   let productImageUrls = [];
   let imageParseError = "";
   try {
@@ -324,8 +330,12 @@
     closeBtns: root.querySelectorAll("[data-viyr-close]"),
     viewerWrap: root.querySelector("[data-viyr-viewer-wrap]"),
     productImage: root.querySelector("[data-viyr-product-image]"),
+    cameraStage: root.querySelector("[data-viyr-camera-stage]"),
+    cameraImage: root.querySelector("[data-viyr-camera-image]"),
     cameraVideo: root.querySelector("[data-viyr-camera-video]"),
     cameraButton: root.querySelector("[data-viyr-start-camera]"),
+    cameraRetry: root.querySelector("[data-viyr-camera-retry]"),
+    cameraBack: root.querySelector("[data-viyr-stop-camera]"),
     cameraNote: root.querySelector("[data-viyr-camera-note]"),
     imageSize: root.querySelector("[data-viyr-image-size]"),
     imageSizeWrap: root.querySelector("[data-viyr-image-size-wrap]"),
@@ -384,12 +394,22 @@
     els.cameraVideo.pause();
     els.cameraVideo.srcObject = null;
     els.cameraVideo.hidden = true;
+    els.cameraStage.hidden = true;
+    els.cameraStage.setAttribute("aria-hidden", "true");
+    els.modal.setAttribute("aria-hidden", els.modal.hidden ? "true" : "false");
     els.cameraButton.hidden = !useProductImage() || !isWardrobe || !isMobileDevice();
   }
   async function startCamera() {
+    if (els.modal.hidden || !isWardrobe || !useProductImage() || !isMobileDevice()) return;
     const request = ++cameraRequest;
+    els.cameraStage.hidden = false;
+    els.cameraStage.setAttribute("aria-hidden", "false");
+    els.modal.setAttribute("aria-hidden", "true");
+    els.cameraBack.focus();
+    els.cameraImage.src = productImageUrls[0];
+    positionProductImage();
     els.cameraNote.textContent = "Starting camera…";
-    els.cameraNote.hidden = false;
+    els.cameraRetry.hidden = true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       els.cameraNote.textContent = "Camera unavailable here. Use a phone browser over HTTPS.";
       return;
@@ -398,7 +418,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false, video: { facingMode: { ideal: "environment" } },
       });
-      if (request !== cameraRequest || els.modal.hidden || !useProductImage()) {
+      if (request !== cameraRequest || els.modal.hidden || els.cameraStage.hidden || !useProductImage()) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -407,21 +427,26 @@
       els.cameraVideo.hidden = false;
       await els.cameraVideo.play();
       if (request === cameraRequest) {
-        els.cameraButton.hidden = true;
         els.cameraNote.textContent = "2D visual overlay only. Drag or resize the image; placement is not measured.";
       }
     } catch (error) {
       if (request !== cameraRequest) return;
-      stopCamera();
+      if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+      els.cameraVideo.srcObject = null;
+      els.cameraVideo.hidden = true;
+      els.cameraRetry.hidden = false;
       els.cameraNote.textContent = error && error.name === "NotAllowedError"
         ? "Camera permission was denied. Allow camera access in your browser."
         : "Camera could not start on this device.";
     }
   }
   function positionProductImage() {
-    els.productImage.style.setProperty("--move-x", imageOffsetX + "px");
-    els.productImage.style.setProperty("--move-y", imageOffsetY + "px");
-    els.productImage.style.setProperty("--size", String(Number(els.imageSize.value) / 100));
+    [els.productImage, els.cameraImage].forEach((image) => {
+      image.style.setProperty("--move-x", imageOffsetX + "px");
+      image.style.setProperty("--move-y", imageOffsetY + "px");
+      image.style.setProperty("--size", String(Number(els.imageSize.value) / 100));
+    });
   }
   function showProductImage() {
     els.loading.hidden = true;
@@ -437,9 +462,7 @@
       : "Product photo • 2D visual preview, not to scale.";
     els.arBtn.hidden = true;
     showArNote("");
-    els.cameraButton.hidden = !isWardrobe || !isMobileDevice() || !!cameraStream;
-    els.cameraNote.hidden = !cameraStream;
-    els.imageSizeWrap.hidden = !isWardrobe;
+    els.cameraButton.hidden = !isWardrobe || !isMobileDevice();
   }
   function updateButtonLabel() {
     els.buttonLabel.textContent = useProductImage()
@@ -600,82 +623,46 @@
     const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("Storefront API returned " + res.status);
     const data = await res.json();
-    if (typeof data.available !== "boolean") throw new Error("Invalid storefront API response");
+    if (typeof data.available !== "boolean" || typeof data.eligible !== "boolean")
+      throw new Error("Storefront API must provide eligibility and model availability");
     return data;
   }
 
-  async function connectProduct() {
-    if (!productId || !productHandle || !productImageUrls.length || imageParseError) {
-      setDebug("connect", imageParseError || "skipped (missing product data)");
-      return null;
-    }
-    try {
-      const res = await fetchWithTimeout(CONNECT_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          shop: shopStorefrontDomain,
-          productId: productId,
-          handle: productHandle,
-          title: productTitle,
-          productType: productType,
-          vendor: productVendor,
-          productUrl: productUrl,
-          imageUrls: productImageUrls,
-        }),
-      });
-      const data = await res.json().catch(() => null);
-      setDebug("backend", res.ok ? "online" : "error (" + res.status + ")");
-      setDebug("connect", res.ok && data ? data.status : "failed (" + res.status + ")");
-      setDebug(
-        "eligible",
-        data && typeof data.eligible === "boolean" ? (data.eligible ? "eligible" : "not eligible") : "unknown",
-      );
-      setDebug("response", JSON.stringify(data, null, 2));
-      if (!res.ok) {
-        console.warn("[View in Your Room] connect rejected:", res.status, data && data.error);
-        return null;
-      }
-      return data;
-    } catch (err) {
-      setDebug("backend", "offline");
-      setDebug("connect", "failed");
-      setDebug("response", String(err));
-      console.warn("[View in Your Room] connect failed:", err);
-      return null;
-    }
-  }
-
   async function initAvailability() {
-    const connection = await connectProduct();
-    if (connection && connection.eligible === true) {
-      eligible = true;
-      els.button.hidden = false;
-    }
     try {
       const data = await fetchModelAvailability();
       availabilityFailed = false;
       setDebug("backend", "online");
+      eligible = data.eligible;
+      setDebug("eligible", eligible ? "eligible" : "not in eligible catalog");
+      els.button.hidden = !eligible;
+      if (!eligible) {
+        availabilityChecking = false;
+        return;
+      }
       setDebug("model", data.available ? "published" : "not available");
       if (data.available && data.modelUrl) {
         modelData = data;
         addReferenceSize();
-        els.button.hidden = false;
 
       } else if (data.available) {
         throw new Error("Published model response has no model URL");
       }
       updateButtonLabel();
       availabilityChecking = false;
-      if ((!els.modal.hidden || (modelData && new URLSearchParams(window.location.search).get("view_ar") === "1"))
-        && root.isConnected) openModal();
+      if (root.isConnected && (imageLanding || landingParams.get("view_dimensions") === "1"
+        || (modelData && landingParams.get("view_ar") === "1"))) {
+        openModal();
+        if (!imageLanding && landingParams.get("view_dimensions") === "1") showFitPanel();
+      } else if (!els.modal.hidden && root.isConnected) openModal();
     } catch (err) {
       availabilityFailed = true;
       availabilityChecking = false;
+      els.button.hidden = true;
       setDebug("backend", "offline");
       setDebug("model", "check failed: " + String(err));
       console.warn("[View in Your Room] availability check failed:", err);
-      if (!els.modal.hidden && root.isConnected) openModal();
+      if (!els.modal.hidden) closeModal();
     }
   }
 
@@ -887,8 +874,6 @@
     }
     els.productImage.hidden = true;
     els.cameraButton.hidden = true;
-    els.cameraNote.hidden = true;
-    els.imageSizeWrap.hidden = true;
     if (modelViewerEl) modelViewerEl.hidden = false;
     if (!modelData) {
       els.loading.hidden = !availabilityChecking;
@@ -1013,7 +998,9 @@
   });
   els.closeBtns.forEach((btn) => btn.addEventListener("click", closeModal));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !els.modal.hidden) closeModal();
+    if (e.key !== "Escape") return;
+    if (!els.cameraStage.hidden) stopCamera();
+    else if (!els.modal.hidden) closeModal();
   });
 
   els.productImage.addEventListener("error", () => {
@@ -1024,31 +1011,30 @@
     els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
   });
   els.cameraButton.addEventListener("click", startCamera);
+  els.cameraRetry.addEventListener("click", startCamera);
+  els.cameraBack.addEventListener("click", stopCamera);
   els.imageSize.addEventListener("input", positionProductImage);
-  els.productImage.addEventListener("pointerdown", (event) => {
-    if (els.productImage.hidden) return;
-    imageDrag = { id: event.pointerId, x: event.clientX - imageOffsetX, y: event.clientY - imageOffsetY };
-    els.productImage.setPointerCapture(event.pointerId);
+  [els.productImage, els.cameraImage].forEach((image) => {
+    image.addEventListener("pointerdown", (event) => {
+      if (image.hidden) return;
+      imageDrag = { id: event.pointerId, x: event.clientX - imageOffsetX, y: event.clientY - imageOffsetY };
+      image.setPointerCapture(event.pointerId);
+    });
+    image.addEventListener("pointermove", (event) => {
+      if (!imageDrag || imageDrag.id !== event.pointerId) return;
+      imageOffsetX = event.clientX - imageDrag.x;
+      imageOffsetY = event.clientY - imageDrag.y;
+      positionProductImage();
+    });
+    image.addEventListener("pointerup", () => { imageDrag = null; });
+    image.addEventListener("pointercancel", () => { imageDrag = null; });
   });
-  els.productImage.addEventListener("pointermove", (event) => {
-    if (!imageDrag || imageDrag.id !== event.pointerId) return;
-    imageOffsetX = event.clientX - imageDrag.x;
-    imageOffsetY = event.clientY - imageDrag.y;
-    positionProductImage();
-  });
-  els.productImage.addEventListener("pointerup", () => { imageDrag = null; });
-  els.productImage.addEventListener("pointercancel", () => { imageDrag = null; });
   window.addEventListener("pagehide", stopCamera);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopCamera();
   });
 
   updateButtonLabel();
-  if (imageLanding) openModal();
-  else if (new URLSearchParams(window.location.search).get("view_dimensions") === "1") {
-    openModal();
-    showFitPanel();
-  }
   initAvailability();
   }
 

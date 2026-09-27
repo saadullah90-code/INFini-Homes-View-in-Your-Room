@@ -271,9 +271,10 @@ export interface LiquidSource {
 }
 
 /**
- * Only ever contains public, already-published data. `available: false` carries no other fields.
+ * Only ever contains public storefront eligibility and already-published model data. Unknown or ineligible products have eligible:false and available:false.
  */
 export interface StorefrontModel {
+  eligible: boolean;
   available: boolean;
   productHandle?: string;
   title?: string;
