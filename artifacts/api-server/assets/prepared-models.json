@@ -10,5 +10,17 @@
       "unit": "cm"
     },
     "notice": "Size-based 3D approximation, not a product scan. Modeled size: 200 W × 210 L × 20 H cm. Other sizes and exact fabric details are not represented."
+  },
+  {
+    "handle": "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly",
+    "objectPath": "product-models/infini-white-wardrobe-80x40x185-v1.glb",
+    "fileSizeBytes": 49904,
+    "dimensions": {
+      "width": 80,
+      "height": 185,
+      "depth": 40,
+      "unit": "cm"
+    },
+    "notice": "Size-based 3D approximation of the white 2-door wardrobe, not a product scan. Outer size: 80 W × 40 D × 185 H cm. Interior layout, fittings and other colour variants are not verified."
   }
 ]

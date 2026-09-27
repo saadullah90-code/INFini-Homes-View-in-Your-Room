@@ -5,6 +5,11 @@ import { ObjectStorageService } from "./objectStorage";
 
 const registryPath = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../assets/prepared-models.json");
 export const PREPARED_MATTRESS_HANDLE = "infini-homes-high-density-foam-premium-white-medical-mattress-200w-x-210l-x-20h";
+export const PREPARED_WARDROBE_HANDLE = "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly";
+const preparedPaths: Record<string, string> = {
+  [PREPARED_MATTRESS_HANDLE]: "product-models/infini-medical-mattress-200x210x20-v1.glb",
+  [PREPARED_WARDROBE_HANDLE]: "product-models/infini-white-wardrobe-80x40x185-v1.glb",
+};
 export interface PreparedModel {
   handle: string;
   objectPath: string;
@@ -16,7 +21,7 @@ const storage = new ObjectStorageService();
 export const PUBLIC_OBJECT_PREFIX = "/api/storage/public-objects/";
 
 export async function getPreparedModel(handle: string): Promise<PreparedModel | null> {
-  if (handle !== PREPARED_MATTRESS_HANDLE) return null;
+  if (!Object.hasOwn(preparedPaths, handle)) return null;
   let raw: string;
   try {
     raw = await readFile(registryPath, "utf8");
@@ -38,7 +43,7 @@ export async function getPreparedModel(handle: string): Promise<PreparedModel | 
     }
   }
   const entry = (entries as PreparedModel[]).find((candidate) => candidate.handle === handle) ?? null;
-  if (entry && entry.objectPath !== "product-models/infini-medical-mattress-200x210x20-v1.glb") {
+  if (entry && entry.objectPath !== preparedPaths[handle]) {
     throw new Error(`Unexpected public object path for ${handle}`);
   }
   return entry;
