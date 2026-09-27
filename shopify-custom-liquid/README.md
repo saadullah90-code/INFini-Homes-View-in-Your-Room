@@ -8,6 +8,8 @@
 4. Wahan **Custom Liquid** section/block add karo (Add block → Custom Liquid).
 5. `view-in-your-room.liquid` ka **complete code** copy karke paste karo.
 6. **Save** karo.
+   - Purana code **poora select karke replace** karo; naya code us ke neeche append na karo.
+   - Shopify ek Custom Liquid field mein maximum **50 KB** accept karta hai. Paste-ready main file is limit se neeche rakhi gayi hai; agar purana aur naya code ikattha paste ho to editor "This code has errors" dikha sakta hai.
 7. Kisi bhi product ka page kholo. Calculator sab product pages par hai; 3D/AR sirf published models par hai.
 8. **"View in Your Room"** button test karo.
 9. Desktop par product preview button dabao → QR aur **Enter your dimensions** button saath nazar aayenge. QR phone se scan karo; **Hide QR code** se QR band kar sakte ho.

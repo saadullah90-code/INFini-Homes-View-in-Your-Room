@@ -5,3 +5,4 @@
 - [Shopify custom app OAuth architecture](shopify-custom-app-oauth-architecture.md) — non-embedded custom app OAuth: authorization-code grant, request-host-derived callback URLs, token-at-rest encryption via existing session secret.
 - [Shopify browser boundaries](shopify-browser-boundaries.md) — real Liquid image URLs and cross-origin preflights must be tested; direct API success does not prove theme integration.
 - [App Storage publication](app-storage-publication.md) — dev GLB upload and verification do not activate storage in an already-running published build; verify production before model review.
+- [Shopify Custom Liquid size cap](shopify-custom-liquid-size-cap.md) — one theme-editor Liquid setting accepts at most 50 KB; oversized snippets show a generic syntax error.

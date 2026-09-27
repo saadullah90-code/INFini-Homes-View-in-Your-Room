@@ -1,23 +1,3 @@
-{% comment %}
-  INFini Homes — "View in Your Room" (Custom Liquid, single-file)
-  =================================================================
-  Paste this ENTIRE file into: Shopify Admin → Online Store → Themes →
-  Customize → Product template → Add block/section → Custom Liquid → Save.
-
-  Nothing else needs editing except the one config line below when the
-  backend moves from Replit to Railway.
-
-  What this does NOT do (by design):
-  - Does not modify product images, gallery, price, variants, or Add to Cart.
-  - Does not embed any Shopify or Meshy secret/token/API key.
-  - Does not assume a model exists -- the backend is the sole source of
-    truth for 3D/AR eligibility, model status, and publish state. The
-    separate fit calculator is available even without a 3D model.
-  - Does not fabricate a USDZ/iOS AR asset -- model-viewer generates Quick
-    Look's USDZ from the actual published GLB when a supported iOS shopper
-    taps AR. Camera permission and AR launch remain browser-controlled.
-{% endcomment %}
-
 <div
   class="viyr-root"
   id="viyr-root-{{ product.id }}"
@@ -56,7 +36,6 @@
             <p data-viyr-error-message>We couldn't load the 3D model right now. Please try again in a moment.</p>
             <button type="button" class="viyr-retry-btn" data-viyr-retry hidden>Retry</button>
           </div>
-          <!-- <model-viewer> is inserted here by JS once the script has loaded and a model is confirmed available. -->
         </div>
 
         <div class="viyr-side">
@@ -132,27 +111,10 @@
     </div>
   </div>
 
-  <!-- Diagnostic panel: only ever shown when the page URL has ?view_ar_debug=1.
-       No secret, token, or credential is ever placed in this markup or the
-       script that fills it in -- only shop/product identifiers and status
-       words. -->
-  <div class="viyr-debug" data-viyr-debug hidden>
-    <div class="viyr-debug__title">View in Your Room — Debug</div>
-    <div class="viyr-debug__row"><span>Shop</span><span data-viyr-debug-shop>—</span></div>
-    <div class="viyr-debug__row"><span>Backend</span><span data-viyr-debug-backend>—</span></div>
-    <div class="viyr-debug__row"><span>Product connect</span><span data-viyr-debug-connect>—</span></div>
-    <div class="viyr-debug__row"><span>Eligibility</span><span data-viyr-debug-eligible>—</span></div>
-    <div class="viyr-debug__row"><span>Model status</span><span data-viyr-debug-model>—</span></div>
-    <div class="viyr-debug__row"><span>Images</span><span data-viyr-debug-images>—</span></div>
-    <div class="viyr-debug__row"><span>Last API response</span></div>
-    <pre data-viyr-debug-response>—</pre>
-  </div>
+  <pre class="viyr-debug" data-viyr-debug hidden></pre>
 </div>
 
 <style>
-  /* Isolated namespace: every rule is scoped under .viyr-*, nothing here
-     targets Shopify theme elements (body, html, h1, button, img, etc.)
-     directly, so it cannot bleed into the rest of the theme. */
   .viyr-root { all: initial; display: block; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   .viyr-root *, .viyr-root *::before, .viyr-root *::after { box-sizing: border-box; }
 
@@ -295,38 +257,20 @@
     .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
-  .viyr-debug {
-    margin: 14px 0; padding: 14px 16px; border-radius: 10px;
-    background: #0b1220; color: #d7e6ff; font-size: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    max-width: 480px;
-  }
+  .viyr-debug { margin: 14px 0; padding: 14px; background: #0b1220; color: #d7e6ff; font: 12px/1.5 monospace; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow: auto; }
   .viyr-debug[hidden] { display: none; }
-  .viyr-debug__title { font-weight: 700; margin-bottom: 8px; color: #ffffff; }
-  .viyr-debug__row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .viyr-debug__row span:first-child { color: #93a4c3; }
-  .viyr-debug pre { white-space: pre-wrap; word-break: break-all; margin: 6px 0 0; max-height: 160px; overflow: auto; background: rgba(255,255,255,0.06); padding: 8px; border-radius: 6px; }
 </style>
 
 <script>
 (function () {
-  // =========================================================================
-  // SINGLE CONFIGURATION VALUE — this is the only thing to change when the
-  // backend moves from Replit to Railway (or any other host). Everything
-  // else in this file adapts automatically.
-  // =========================================================================
   const VIEW_IN_YOUR_ROOM_API = "https://in-fini-homes-view-in-your-room-kindc8ae36.replit.app";
-  // =========================================================================
 
   const API_BASE = VIEW_IN_YOUR_ROOM_API.replace(/\/$/, "");
   const STOREFRONT_ENDPOINT = API_BASE + "/api/storefront/model";
   const CONNECT_ENDPOINT = API_BASE + "/api/storefront/connect";
   const MODEL_VIEWER_SRC = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js";
-  // The former qrcode/build URL was HTTP 404; qrcodejs is a classic script.
   const QRCODE_LIB_SRC = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
 
-  // The global bootstrap survives Shopify's section replacement. Each new
-  // DOM root gets its own handlers; existing roots are never initialized twice.
   if (window.__viyrBootstrap) {
     window.__viyrBootstrap();
     return;
@@ -341,17 +285,12 @@
   const productTitle = root.dataset.productTitle || "";
   const productType = root.dataset.productType || "";
   const productVendor = root.dataset.productVendor || "";
-  // product.url without `within: collection` always points to /products/...
   const productUrl = "/products/" + encodeURIComponent(productHandle);
   let productImageUrls = [];
   let imageParseError = "";
   try {
     const images = JSON.parse(root.dataset.productImageUrls || "[]");
     if (!Array.isArray(images)) throw new Error("Images are not an array");
-    // Liquid's image.src on the live store resolves to
-    // //infinihomes.shop/cdn/shop/files/..., while /connect accepts only
-    // absolute https://cdn.shopify.com URLs. The CDN file root below is
-    // verified against this shop's public /products.json images.
     const shopifyFileRoot = "https://cdn.shopify.com/s/files/1/0625/5892/8940/";
     productImageUrls = images.map((image) => {
       const url = new URL(image, window.location.origin);
@@ -366,28 +305,15 @@
     imageParseError = String(err);
   }
 
-  // Diagnostic panel: only ever activated by ?view_ar_debug=1. Nothing here
-  // reads or displays a secret -- only shop/product identifiers and status
-  // words already safe to show a merchant testing the integration.
-  const debugEnabled = new URLSearchParams(window.location.search).get("view_ar_debug") === "1";
-  const debugEls = debugEnabled
-    ? {
-        panel: root.querySelector("[data-viyr-debug]"),
-        shop: root.querySelector("[data-viyr-debug-shop]"),
-        backend: root.querySelector("[data-viyr-debug-backend]"),
-        connect: root.querySelector("[data-viyr-debug-connect]"),
-        eligible: root.querySelector("[data-viyr-debug-eligible]"),
-        model: root.querySelector("[data-viyr-debug-model]"),
-        images: root.querySelector("[data-viyr-debug-images]"),
-        response: root.querySelector("[data-viyr-debug-response]"),
-      }
-    : null;
-  if (debugEls && debugEls.panel) {
-    debugEls.panel.hidden = false;
-    if (debugEls.shop) debugEls.shop.textContent = shopStorefrontDomain + " / " + productHandle;
-  }
+  const debugPanel = new URLSearchParams(window.location.search).get("view_ar_debug") === "1"
+    ? root.querySelector("[data-viyr-debug]") : null;
+  const debugValues = {};
+  if (debugPanel) debugPanel.hidden = false;
   function setDebug(field, value) {
-    if (debugEls && debugEls[field]) debugEls[field].textContent = value;
+    if (!debugPanel) return;
+    debugValues[field] = value;
+    debugPanel.textContent = "Shop: " + shopStorefrontDomain + " / " + productHandle + "\n"
+      + Object.entries(debugValues).map(([key, item]) => key + ": " + item).join("\n");
   }
   setDebug("images", imageParseError || productImageUrls.length + " Shopify CDN URL(s)");
 
@@ -436,15 +362,9 @@
   let viewerState = "idle"; // idle | loading | loaded | error
   let viewerTimer = null;
   let qrRequest = 0;
-  // Set synchronously (before the first `await` in openModal) so a burst of
-  // rapid clicks -- which all run their synchronous prelude before any of
-  // them resumes after `await ensureModelViewer()` -- can't all see
-  // `modelViewerEl` as still null and each build their own <model-viewer>.
   let modelViewerBuildStarted = false;
   const isWardrobe = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly";
   const landingParams = new URLSearchParams(window.location.search);
-  // Old no-model QRs used view_dimensions=1. If this product has an image,
-  // open that image instead; dimensions remain a separate explicit button.
   const imageLanding = landingParams.get("view_product_image") === "1"
     || (landingParams.get("view_dimensions") === "1" && !!productImageUrls[0]);
   let forceImageFallback = false;
@@ -455,8 +375,6 @@
   let imageOffsetY = 0;
   let imageDrag = null;
   function useProductImage() {
-    // This product's first Shopify image is the transparent white-wardrobe PNG.
-    // On other products, a published 3D model still takes precedence.
     return !!productImageUrls[0] && (isWardrobe || imageLanding || forceImageFallback || !modelData);
   }
   function stopCamera() {
@@ -621,8 +539,6 @@
     option.value = "model";
     option.textContent = "3D reference size — " + dims.width + " W × " + dims.depth + " D × " + dims.height + " H cm";
     els.sizeChoice.insertBefore(option, els.sizeChoice.firstChild);
-    // Prefill only if no Shopify Size option exists and the customer has
-    // not already typed measurements. Never overwrite an in-progress form.
     if (els.sizeChoice.options.length === 2 && productFields.every((field) => !fitField(field).value)) {
       els.sizeChoice.value = "model";
       changeSizeChoice();
@@ -688,13 +604,6 @@
     return data;
   }
 
-  // Registers/refreshes this product with the backend so it shows up in the
-  // admin dashboard's review pipeline -- no Shopify OAuth involved, only the
-  // public fields already rendered into this page by Liquid. A failure here
-  // never blocks the model-availability check right after it: a product
-  // that was already connected on an earlier page view can still have a
-  // published model worth showing even if this particular connect call
-  // fails (e.g. a transient network error).
   async function connectProduct() {
     if (!productId || !productHandle || !productImageUrls.length || imageParseError) {
       setDebug("connect", imageParseError || "skipped (missing product data)");
@@ -758,13 +667,9 @@
       }
       updateButtonLabel();
       availabilityChecking = false;
-      // QR links can open a preview or the calculator, never AR/camera
-      // without a user tap.
       if ((!els.modal.hidden || (modelData && new URLSearchParams(window.location.search).get("view_ar") === "1"))
         && root.isConnected) openModal();
     } catch (err) {
-      // A confirmed eligible product retains its button. Never claim a model
-      // is ready when the availability request failed.
       availabilityFailed = true;
       availabilityChecking = false;
       setDebug("backend", "offline");
@@ -805,8 +710,6 @@
     mv.setAttribute("interaction-prompt", "auto");
     if (modelData.thumbnailUrl) mv.setAttribute("poster", modelData.thumbnailUrl);
     mv.setAttribute("shadow-intensity", "1");
-    // With no ios-src, model-viewer 3.5 generates a USDZ for Quick Look
-    // from this *published GLB* on supported iOS devices. No fake asset URL.
     mv.setAttribute("ar", "");
     if (modelData.dimensions) mv.setAttribute("ar-scale", "fixed");
     mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
@@ -864,10 +767,8 @@
         ? "Tap to open Apple's Quick Look. Your browser may ask for camera access."
         : "Tap to place this product in your room. Your browser may ask for camera access.");
     } else {
-      // Desktop: keep the phone handoff next to the fit-calculator action.
       els.arBtn.hidden = true;
       showArNote("");
-      // When no 3D model exists, hand off to the independent fit calculator.
       els.qrBtn.hidden = false;
     }
   }
@@ -884,7 +785,6 @@
   function selectedVariantId() {
     const fromUrl = new URLSearchParams(window.location.search).get("variant");
     if (fromUrl && /^\d+$/.test(fromUrl)) return fromUrl;
-    // Shopify themes commonly store the active variant in the product form.
     const input = document.querySelector('form[action*="/cart/add"] [name="id"]');
     return input && /^\d+$/.test(input.value) ? input.value : "";
   }
@@ -897,14 +797,10 @@
       && candidate.hostname.replace(/^www\./, "") === shopStorefrontDomain.replace(/^www\./, "")
       && candidate.pathname.replace(/\/$/, "").endsWith(path)
       ? candidate : new URL(root.dataset.productUrl || path, window.location.origin);
-    // Do not reuse the current browser URL: collection paths and debug/session
-    // parameters are not canonical product links.
     page.search = "";
     page.hash = "";
     const variant = selectedVariantId();
     if (variant) page.searchParams.set("variant", variant);
-    // The QR opens the same primary preview on the phone. The calculator has
-    // its own button; scanning an image QR must never open dimensions.
     page.searchParams.set(useProductImage() ? "view_product_image" : modelData ? "view_ar" : "view_dimensions", "1");
     return page.toString();
   }
@@ -1008,8 +904,6 @@
 
     setupArButton();
     if (!modelViewerEl && !modelViewerBuildStarted) {
-      // Check before loading or constructing <model-viewer>: its constructor
-      // assumes a WebGL2 context exists and can throw before any load event.
       if (!supportsWebGL2()) {
         viewerState = "unsupported";
         els.loading.hidden = true;
@@ -1102,8 +996,6 @@
     }
   });
   els.arBtn.addEventListener("click", () => {
-    // activateAR must be called directly in this user gesture, not after an
-    // await, fetch, timer, modal auto-open, or a programmatic camera request.
     if (viewerState !== "loaded" || !modelViewerEl || modelViewerEl.canActivateAR !== true) {
       setupArButton();
       return;
