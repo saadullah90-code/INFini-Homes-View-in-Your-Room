@@ -14,6 +14,11 @@ const COOKIE = "ih_admin_console";
 const MAX_AGE_MS = 8 * 60 * 60 * 1000;
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
+router.use("/admin-console", (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 function configured() {
   return Boolean(process.env.ADMIN_CONSOLE_PASSWORD && process.env.SESSION_SECRET);
 }
