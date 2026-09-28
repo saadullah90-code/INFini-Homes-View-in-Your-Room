@@ -312,11 +312,11 @@
   let viewerTimer = null;
   let qrRequest = 0;
   let modelViewerBuildStarted = false;
-  const isWardrobe = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly";
+  const arOnly = productHandle === "infini-homes-2-door-wooden-wardrobe-cabinet-cupboard-of-engineered-wood-with-1-lockable-drawer-perfect-modern-stylish-heavy-duty-color-white-without-assembly"
+    || productHandle === "infini-homes-high-density-foam-premium-white-medical-mattress-200w-x-210l-x-20h";
   const landingParams = new URLSearchParams(window.location.search);
   const imageLanding = landingParams.get("view_product_image") === "1"
     || (landingParams.get("view_dimensions") === "1" && !!productImageUrls[0]);
-  let forceImageFallback = false;
   let imageFailed = false;
   let cameraStream = null;
   let cameraRequest = 0;
@@ -324,7 +324,7 @@
   let imageOffsetY = 0;
   let imageDrag = null;
   function useProductImage() {
-    return !!productImageUrls[0] && (isWardrobe || imageLanding || forceImageFallback || !modelData);
+    return !arOnly && !!productImageUrls[0] && (imageLanding || !modelData);
   }
   function stopCamera() {
     cameraRequest++;
@@ -336,17 +336,17 @@
     els.cameraStage.hidden = true;
     els.cameraStage.setAttribute("aria-hidden", "true");
     els.modal.setAttribute("aria-hidden", els.modal.hidden ? "true" : "false");
-    els.cameraButton.hidden = !productImageUrls[0] || !isMobileDevice();
+    els.cameraButton.hidden = arOnly || !productImageUrls[0] || !isMobileDevice();
   }
   async function startCamera() {
-    if (els.modal.hidden || !productImageUrls[0] || !isMobileDevice()) return;
+    if (arOnly || els.modal.hidden || !productImageUrls[0] || !isMobileDevice()) return;
     const request = ++cameraRequest;
     els.cameraStage.hidden = false;
     els.cameraStage.setAttribute("aria-hidden", "false");
     els.modal.setAttribute("aria-hidden", "true");
     els.cameraBack.focus();
     els.cameraImage.src = productImageUrls[0];
-    els.cameraImage.style.opacity = isWardrobe ? "1" : "0.8";
+    els.cameraImage.style.opacity = "0.8";
     positionProductImage();
     els.cameraNote.textContent = "Starting camera…";
     els.cameraRetry.hidden = true;
@@ -401,7 +401,7 @@
     els.hint.textContent = "Product photo • pinch or drag; not to scale.";
     els.arBtn.hidden = true;
     showArNote("");
-    els.cameraButton.hidden = imageFailed || !isMobileDevice();
+    els.cameraButton.hidden = arOnly || imageFailed || !isMobileDevice();
     els.previewSizeWrap.hidden = false;
   }
   function updateButtonLabel() {
@@ -825,16 +825,17 @@
       return;
     }
     els.productImage.hidden = true;
-    els.cameraButton.hidden = !productImageUrls[0] || !isMobileDevice();
+    els.cameraButton.hidden = arOnly || !productImageUrls[0] || !isMobileDevice();
     els.previewSizeWrap.hidden = true;
     if (modelViewerEl) modelViewerEl.hidden = false;
     if (!modelData) {
       els.loading.hidden = !availabilityChecking;
       els.error.hidden = availabilityChecking;
       els.errorMessage.textContent = availabilityChecking
-        ? "Checking whether this product's 3D model is ready…"
+        ? "Checking 3D model…"
         : availabilityFailed
-        ? "We can't check this product's 3D model right now. Retry the availability check."
+        ? "3D status unavailable. Retry in a moment."
+        : arOnly ? "3D/AR not published yet."
         : "No 3D model yet. Enter dimensions to check room fit.";
       els.qrBtn.hidden = isMobileDevice();
       return;
