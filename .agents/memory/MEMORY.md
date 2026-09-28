@@ -6,3 +6,4 @@
 - [Shopify browser boundaries](shopify-browser-boundaries.md) — real Liquid image URLs and cross-origin preflights must be tested; direct API success does not prove theme integration.
 - [App Storage publication](app-storage-publication.md) — dev GLB upload and verification do not activate storage in an already-running published build; verify production before model review.
 - [Shopify Custom Liquid size cap](shopify-custom-liquid-size-cap.md) — one theme-editor Liquid setting accepts at most 50 KB; oversized snippets show a generic syntax error.
+- [Storefront API rollout](storefront-api-rollout.md) — Shopify Liquid and published backend are separate rollouts; keep old-response compatibility until merchants publish and replace the block.

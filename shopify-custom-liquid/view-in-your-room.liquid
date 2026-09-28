@@ -5,13 +5,10 @@
   data-product-handle="{{ product.handle }}"
   data-product-title="{{ product.title | escape }}"
   data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
-  data-shop-domain="{{ shop.permanent_domain }}"
+  {% if product.featured_image %}data-featured-image="{{ product.featured_image | image_url: width: 1200 | escape }}"{% endif %}
   data-shop-storefront-domain="{{ request.host }}"
 >
   <button type="button" class="viyr-button" data-viyr-open hidden>
-    <svg class="viyr-button__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-      <path fill="currentColor" d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3 6.5 3.6-6.5 3.6-6.5-3.6L12 4.3ZM5 9.6l6 3.3v7.1l-6-3.3V9.6Zm8 10.4v-7.1l6-3.3v7.1l-6 3.3Z"/>
-    </svg>
     <span data-viyr-button-label>Check Size &amp; Room Fit</span>
   </button>
 
@@ -45,9 +42,9 @@
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
           <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
-          <label class="viyr-image-size" data-viyr-preview-size-wrap hidden>Image size — pinch or slide
-            <input type="range" data-viyr-preview-size min="50" max="240" value="100">
-          </label>
+          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Image size — pinch or slide
+            <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink image">−</button><input type="range" aria-label="Image size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge image">+</button></div>
+          </div>
 
           <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
@@ -100,7 +97,7 @@
           </fieldset>
         </div>
         <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
-        <p class="viyr-fit__note">Remaining width assumes centered placement. Back gap must be entered; wall width cannot determine it. Floor depth remaining is the space <strong>in front</strong> of the product. Allow extra clearance for doors, drawers and walking. A custom size is not an order or confirmed available variant. Camera/image preview is not to scale.</p>
+        <p class="viyr-fit__note">Remaining width assumes centered placement. Enter back gap separately; floor clearance is space <strong>in front</strong> of the product. Allow room for doors and walking. Custom sizes are not confirmed variants. Photo preview is not to scale.</p>
       </section>
     </div>
   </div>
@@ -112,62 +109,34 @@
     <div class="viyr-camera-stage__controls">
       <p data-viyr-camera-note role="status" aria-live="polite"></p>
       <button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
-      <label class="viyr-image-size" data-viyr-image-size-wrap>Visual image size
-        <input type="range" data-viyr-image-size min="50" max="240" value="100">
-      </label>
+      <div class="viyr-image-size" data-viyr-image-size-wrap>Visual image size
+        <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink image">−</button><input type="range" aria-label="Visual image size" data-viyr-image-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge image">+</button></div>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .viyr-root { all: initial; display: block; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .viyr-root { all: initial; display: block; font-family: system-ui, Arial, sans-serif; }
   .viyr-root *, .viyr-root *::before, .viyr-root *::after { box-sizing: border-box; }
 
-  .viyr-button {
-    display: inline-flex; align-items: center; gap: 8px;
-    margin: 12px 0; padding: 12px 20px;
-    background: #111827; color: #ffffff; border: none; border-radius: 999px;
-    font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.1s ease;
-  }
+  .viyr-button { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0; padding: 12px 20px; background: #111827; color: #fff; border: none; border-radius: 999px; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; }
   .viyr-button:hover { background: #1f2937; }
   .viyr-button:active { transform: scale(0.98); }
   .viyr-button[hidden] { display: none; }
-  .viyr-button__icon { flex: none; }
 
-  .viyr-modal {
-    position: fixed; inset: 0; z-index: 2147483000;
-    display: flex; align-items: center; justify-content: center;
-  }
+  .viyr-modal { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; }
   .viyr-modal[hidden] { display: none; }
-  .viyr-modal__backdrop {
-    position: absolute; inset: 0; background: rgba(17, 24, 39, 0.6);
-  }
-  .viyr-modal__panel {
-    position: relative; z-index: 1;
-    width: min(920px, 94vw); max-height: 90vh; overflow: hidden;
-    background: #ffffff; border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    display: flex; flex-direction: column;
-  }
-  .viyr-modal__close {
-    position: absolute; top: 10px; right: 12px; z-index: 2;
-    width: 36px; height: 36px; border-radius: 999px; border: none;
-    background: rgba(255,255,255,0.9); color: #111827;
-    font-size: 22px; line-height: 1; cursor: pointer;
-  }
-  .viyr-modal__body {
-    display: flex; flex-direction: column; height: 100%;
-  }
+  .viyr-modal__backdrop { position: absolute; inset: 0; background: rgba(17,24,39,.6); }
+  .viyr-modal__panel { position: relative; z-index: 1; width: min(920px,94vw); max-height: 90vh; overflow: hidden; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+  .viyr-modal__close { position: absolute; top: 10px; right: 12px; z-index: 2; width: 36px; height: 36px; border-radius: 999px; border: none; background: rgba(255,255,255,.9); color: #111827; font-size: 22px; line-height: 1; cursor: pointer; }
+  .viyr-modal__body { display: flex; flex-direction: column; height: 100%; }
   .viyr-modal__body[hidden] { display: none; }
   @media (min-width: 720px) {
     .viyr-modal__body { flex-direction: row; }
   }
 
-  .viyr-viewer-wrap {
-    position: relative; flex: 1 1 60%;
-    min-height: 320px; background: #f3f4f6; overflow: hidden;
-  }
+  .viyr-viewer-wrap { position: relative; flex: 1 1 60%; min-height: 320px; background: #f3f4f6; overflow: hidden; }
   .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
   .viyr-viewer-wrap model-viewer[hidden] { display: none; }
   .viyr-camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -179,52 +148,31 @@
   .viyr-camera-stage__controls p { margin: 0 0 8px; }
   .viyr-camera-stage__controls .viyr-qr-btn { margin: 0 0 8px; }
   .viyr-camera-stage .viyr-image-size { color: #fff; }
-  .viyr-product-image {
-    position: absolute; top: 50%; left: 50%; max-width: 86%; max-height: 86%;
-    width: auto; height: auto; object-fit: contain; cursor: grab; touch-action: none;
-    user-select: none; -webkit-user-drag: none;
-    transform: translate(-50%, -50%) translate(var(--move-x, 0px), var(--move-y, 0px)) scale(var(--size, 1));
-    filter: drop-shadow(0 7px 8px rgba(0,0,0,.18));
-  }
+  .viyr-product-image { position: absolute; top: 50%; left: 50%; max-width: 86%; max-height: 86%; width: auto; height: auto; object-fit: contain; cursor: grab; touch-action: none; user-select: none; -webkit-user-drag: none; transform: translate(-50%,-50%) translate(var(--move-x,0px),var(--move-y,0px)) scale(var(--size,1)); filter: drop-shadow(0 7px 8px rgba(0,0,0,.18)); }
   .viyr-product-image:active { cursor: grabbing; }
   .viyr-camera-video[hidden], .viyr-product-image[hidden] { display: none; }
   .viyr-image-size { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4b5563; }
   .viyr-image-size[hidden] { display: none; }
-  .viyr-image-size input { width: 180px; max-width: 100%; }
+  .viyr-size-row { display: flex; align-items: center; gap: 10px; }
+  .viyr-size-row input { width: 150px; max-width: 100%; flex: 1; }
+  .viyr-size-row button { border: 0; border-radius: 6px; padding: 6px 12px; background: #eee; color: #111; font-size: 18px; touch-action: manipulation; }
 
-  .viyr-state {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 10px;
-    color: #4b5563; font-size: 14px; text-align: center; padding: 20px;
-  }
+  .viyr-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #4b5563; font-size: 14px; text-align: center; padding: 20px; }
   .viyr-state[hidden] { display: none; }
-  .viyr-spinner {
-    width: 32px; height: 32px; border-radius: 999px;
-    border: 3px solid #e5e7eb; border-top-color: #111827;
-    animation: viyr-spin 0.8s linear infinite;
-  }
+  .viyr-spinner { width: 32px; height: 32px; border-radius: 999px; border: 3px solid #e5e7eb; border-top-color: #111827; animation: viyr-spin .8s linear infinite; }
   @keyframes viyr-spin { to { transform: rotate(360deg); } }
 
-  .viyr-side {
-    flex: 1 1 40%; padding: 20px 24px 24px; overflow-y: auto;
-    display: flex; flex-direction: column;
-  }
+  .viyr-side { flex: 1 1 40%; padding: 20px 24px 24px; overflow-y: auto; display: flex; flex-direction: column; }
   .viyr-side__title { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: #111827; }
   .viyr-side__hint { margin: 0 0 16px; font-size: 13px; color: #6b7280; }
   .viyr-side__dimensions { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: #111827; }
   .viyr-side__notice { margin: 0 0 10px; font-size: 12px; line-height: 1.4; color: #4b5563; }
   .viyr-side__dimensions[hidden], .viyr-side__notice[hidden] { display: none; }
-  .viyr-retry-btn, .viyr-qr-btn {
-    padding: 10px 16px; border: 1px solid #111827; border-radius: 8px;
-    background: #fff; color: #111827; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
+  .viyr-retry-btn, .viyr-qr-btn { padding: 10px 16px; border: 1px solid #111827; border-radius: 8px; background: #fff; color: #111827; font-size: 14px; font-weight: 600; cursor: pointer; }
   .viyr-retry-btn[hidden], .viyr-qr-btn[hidden] { display: none; }
   .viyr-qr-btn { align-self: flex-start; margin: 8px 0; }
 
-  .viyr-ar-btn {
-    margin: 4px 0 6px; padding: 12px 16px; border: none; border-radius: 10px;
-    background: #111827; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
+  .viyr-ar-btn { margin: 4px 0 6px; padding: 12px 16px; border: none; border-radius: 10px; background: #111827; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
   .viyr-ar-btn:hover { background: #1f2937; }
   .viyr-ar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .viyr-ar-btn[hidden] { display: none; }
@@ -243,10 +191,7 @@
   .viyr-fit h3 { margin: 14px 0 6px; font-size: 20px; }
   .viyr-fit p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
   .viyr-fit label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
-  .viyr-fit input, .viyr-fit select {
-    width: 100%; min-height: 40px; border: 1px solid #aab6bd; border-radius: 7px;
-    padding: 8px 10px; color: #172333; background: white; font: inherit;
-  }
+  .viyr-fit input, .viyr-fit select { width: 100%; min-height: 40px; border: 1px solid #aab6bd; border-radius: 7px; padding: 8px 10px; color: #172333; background: white; font: inherit; }
   .viyr-fit select { max-width: 440px; margin: 6px 0 10px; }
   .viyr-fit__fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .viyr-fit__spaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
@@ -297,16 +242,16 @@
   try {
     const images = JSON.parse(root.dataset.productImageUrls || "[]");
     if (!Array.isArray(images)) throw new Error("Images are not an array");
-    const shopifyFileRoot = "https://cdn.shopify.com/s/files/1/0625/5892/8940/";
-    productImageUrls = images.map((image) => {
-      const url = new URL(image, window.location.origin);
-      if (url.hostname === "cdn.shopify.com" && url.protocol === "https:") return url.href;
-      if ((url.hostname === shopStorefrontDomain || url.hostname === "infinihomes.shop" || url.hostname === "www.infinihomes.shop")
-        && /^\/cdn\/shop\/(files|products)\//.test(url.pathname)) {
-        return shopifyFileRoot + url.pathname.replace(/^\/cdn\/shop\//, "") + url.search;
-      }
-      throw new Error("Unsupported image host or path");
-    });
+    for (const image of [...images, root.dataset.featuredImage]) {
+      if (!image) continue;
+      try {
+        const url = new URL(image, window.location.origin);
+        if (url.protocol === "https:" && (url.hostname === "cdn.shopify.com"
+          || ((url.hostname === shopStorefrontDomain || url.hostname === "infinihomes.shop" || url.hostname === "www.infinihomes.shop")
+            && /^\/cdn\/shop\/(files|products)\//.test(url.pathname)))) productImageUrls.push(url.href);
+      } catch (_) {}
+    }
+    productImageUrls = [...new Set(productImageUrls)];
   } catch (err) {
     console.warn("[View in Your Room] Invalid product image URLs:", err);
   }
@@ -352,13 +297,13 @@
     fitResult: root.querySelector("[data-viyr-fit-result]"),
   };
 
-  let modelData = null; // populated once the backend confirms a published model
-  let eligible = false;
+  let modelData = null;
+  let fetched = false;
   let availabilityChecking = true;
   let availabilityFailed = false;
   let modelViewerLoadPromise = null;
   let modelViewerEl = null;
-  let viewerState = "idle"; // idle | loading | loaded | error
+  let viewerState = "idle";
   let viewerTimer = null;
   let qrRequest = 0;
   let modelViewerBuildStarted = false;
@@ -386,10 +331,10 @@
     els.cameraStage.hidden = true;
     els.cameraStage.setAttribute("aria-hidden", "true");
     els.modal.setAttribute("aria-hidden", els.modal.hidden ? "true" : "false");
-    els.cameraButton.hidden = !useProductImage() || !isMobileDevice();
+    els.cameraButton.hidden = !productImageUrls[0] || !isMobileDevice();
   }
   async function startCamera() {
-    if (els.modal.hidden || !useProductImage() || !isMobileDevice()) return;
+    if (els.modal.hidden || !productImageUrls[0] || !isMobileDevice()) return;
     const request = ++cameraRequest;
     els.cameraStage.hidden = false;
     els.cameraStage.setAttribute("aria-hidden", "false");
@@ -408,7 +353,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false, video: { facingMode: { ideal: "environment" } },
       });
-      if (request !== cameraRequest || els.modal.hidden || els.cameraStage.hidden || !useProductImage()) {
+      if (request !== cameraRequest || els.modal.hidden || els.cameraStage.hidden) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -448,12 +393,10 @@
     els.productImage.hidden = imageFailed;
     if (els.productImage.src !== productImageUrls[0]) els.productImage.src = productImageUrls[0];
     els.hint.hidden = false;
-    els.hint.textContent = isWardrobe
-      ? "White wardrobe PNG • pinch or drag to adjust; not to scale."
-      : "Product photo • pinch or drag to adjust; not to scale.";
+    els.hint.textContent = "Product photo • pinch or drag to adjust; not to scale.";
     els.arBtn.hidden = true;
     showArNote("");
-    els.cameraButton.hidden = !isMobileDevice();
+    els.cameraButton.hidden = imageFailed || !isMobileDevice();
     els.previewSizeWrap.hidden = false;
   }
   function updateButtonLabel() {
@@ -539,10 +482,10 @@
     }
     productFields.forEach((field, index) => { fitField(field).value = values[index]; });
     els.sizeSource.textContent = lastSizeChoice === "model"
-      ? "Reference dimensions from the approved 3D preview (not automatically valid for other variants). Edit if your selected product differs."
+      ? "3D reference measurements may differ from other variants. Edit as needed."
       : lastSizeChoice === "custom"
-      ? "Custom measurements are for planning only, not a confirmed orderable size."
-      : "Shopify lists this size name, but has no verified width/depth/height here. Enter its actual measurements below.";
+      ? "Custom measurements are for planning only, not an orderable size."
+      : "Shopify has no verified measurements for this size. Enter the actual dimensions.";
     renderFit();
   }
   function addReferenceSize() {
@@ -615,8 +558,8 @@
     const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("Storefront API returned " + res.status);
     const data = await res.json();
-    if (typeof data.available !== "boolean" || typeof data.eligible !== "boolean")
-      throw new Error("Storefront API must provide eligibility and model availability");
+    if (typeof data.available !== "boolean" || (typeof data.fetched !== "boolean" && typeof data.eligible !== "boolean"))
+      throw new Error("Storefront API missing product status");
     return data;
   }
 
@@ -624,9 +567,11 @@
     try {
       const data = await fetchModelAvailability();
       availabilityFailed = false;
-      eligible = data.eligible;
-      els.button.hidden = !eligible;
-      if (!eligible) {
+      if (!productImageUrls[0] && typeof data.imageUrl === "string"
+        && data.imageUrl.startsWith("https://cdn.shopify.com/")) productImageUrls = [data.imageUrl];
+      fetched = data.fetched === true || (data.fetched === undefined && data.eligible === true);
+      els.button.hidden = !fetched;
+      if (!fetched) {
         availabilityChecking = false;
         return;
       }
@@ -656,7 +601,7 @@
   async function ensureModelViewer() {
     if (!modelViewerLoadPromise) {
       modelViewerLoadPromise = loadScriptOnce(MODEL_VIEWER_SRC).catch((err) => {
-        modelViewerLoadPromise = null; // a subsequent modal open can retry
+        modelViewerLoadPromise = null;
         throw err;
       });
     }
@@ -835,7 +780,7 @@
     }
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
-    if (!els.fit.hidden) return; // leave an open calculator undisturbed by API refreshes
+    if (!els.fit.hidden) return;
     els.body.hidden = false;
     els.title.textContent = (modelData && modelData.title) || productTitle;
     renderModelDetails();
@@ -860,7 +805,7 @@
       return;
     }
     els.productImage.hidden = true;
-    els.cameraButton.hidden = true;
+    els.cameraButton.hidden = !productImageUrls[0] || !isMobileDevice();
     els.previewSizeWrap.hidden = true;
     if (modelViewerEl) modelViewerEl.hidden = false;
     if (!modelData) {
@@ -883,8 +828,8 @@
         els.error.hidden = false;
         els.retry.hidden = true;
         els.errorMessage.textContent = isMobileDevice()
-          ? "3D/AR preview needs WebGL2 enabled on this phone. The published model is still available; try a supported mobile browser."
-          : "3D preview needs WebGL2 enabled in this browser. The published model is still available; scan the QR code on a supported phone for AR.";
+          ? "3D/AR needs WebGL2. Try a supported mobile browser."
+          : "3D needs WebGL2. Scan the QR code on a supported phone.";
         setupArButton();
         return;
       }
@@ -904,7 +849,7 @@
         }, 20000);
       } catch (err) {
         console.warn("[View in Your Room] model-viewer failed to load:", err);
-        modelViewerBuildStarted = false; // allow a retry on the next open
+        modelViewerBuildStarted = false;
         onViewerError();
         return;
       }
@@ -989,8 +934,14 @@
   });
 
   els.productImage.addEventListener("error", () => {
+    productImageUrls.shift();
+    if (productImageUrls[0]) {
+      els.productImage.src = productImageUrls[0];
+      return;
+    }
     imageFailed = true;
     els.productImage.hidden = true;
+    els.cameraButton.hidden = true;
     els.error.hidden = false;
     els.retry.hidden = true;
     els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
@@ -999,6 +950,10 @@
   els.cameraRetry.addEventListener("click", startCamera);
   els.cameraBack.addEventListener("click", stopCamera);
   els.imageSize.addEventListener("input", positionProductImage);
+  root.querySelectorAll("[data-viyr-zoom]").forEach((button) => button.addEventListener("click", () => {
+    els.imageSize.value = Math.max(50, Math.min(240, Number(els.imageSize.value) + Number(button.dataset.viyrZoom)));
+    positionProductImage();
+  }));
   els.previewSize.addEventListener("input", () => {
     els.imageSize.value = els.previewSize.value;
     positionProductImage();

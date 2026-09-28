@@ -8,11 +8,13 @@
 import type { ProductDimensions } from './productDimensions';
 
 /**
- * Only ever contains public storefront eligibility and already-published model data. Unknown or ineligible products have eligible:false and available:false.
+ * Public fetched-product status, eligibility and already-published model data. Unknown/sample products have fetched:false. Fetched but ineligible products have fetched:true, eligible:false and available:false.
  */
 export interface StorefrontModel {
+  fetched: boolean;
   eligible: boolean;
   available: boolean;
+  imageUrl?: string;
   productHandle?: string;
   title?: string;
   modelUrl?: string;

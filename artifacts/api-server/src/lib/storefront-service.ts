@@ -1,5 +1,5 @@
 import { db, productsTable, productModelsTable, logEntriesTable } from "@workspace/db";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { isEligibleProduct } from "./eligibility";
 import { getPreparedModel, resolveModelUrl } from "./prepared-models";
@@ -79,8 +79,10 @@ export function computeImageSetHash(imageUrls: string[]): string {
 }
 
 export interface StorefrontModelResult {
+  fetched: boolean;
   eligible: boolean;
   available: boolean;
+  imageUrl?: string;
   productHandle?: string;
   title?: string;
   modelUrl?: string;
@@ -91,8 +93,8 @@ export interface StorefrontModelResult {
 }
 
 /**
- * Looks up whether an eligible product identified by its Shopify handle has
- * a PUBLISHED model with a real GLB URL, and if so returns only the public
+ * Looks up whether a previously fetched product identified by its Shopify
+ * handle has a PUBLISHED model with a real GLB URL, and returns only the public
  * fields the storefront needs. Reuses the exact same publish-gating logic as
  * the existing `/ar/:token` route (status === "PUBLISHED" && optimizedModelUrl
  * set), just keyed by product handle instead of the AR token.
@@ -104,10 +106,15 @@ export async function getStorefrontModel(
   const [product] = await db
     .select()
     .from(productsTable)
-    .where(eq(productsTable.handle, handle));
+    .where(and(eq(productsTable.handle, handle), ne(productsTable.source, "sample")));
 
-  if (!product || !product.eligible || product.source === "sample") {
-    return { eligible: false, available: false };
+  if (!product) {
+    return { fetched: false, eligible: false, available: false };
+  }
+  const imageUrl = product.primaryImageUrl && isValidShopifyCdnImageUrl(product.primaryImageUrl)
+    ? product.primaryImageUrl : undefined;
+  if (!product.eligible) {
+    return { fetched: true, eligible: false, available: false, imageUrl };
   }
 
   const [model] = await db
@@ -117,7 +124,7 @@ export async function getStorefrontModel(
 
   if (!model || model.status !== "PUBLISHED" || !model.optimizedModelUrl || !model.arToken ||
       (product.source !== "sample" && model.provider === "mock")) {
-    return { eligible: true, available: false };
+    return { fetched: true, eligible: true, available: false, imageUrl };
   }
 
   const prepared = model.provider === "prepared" ? await getPreparedModel(product.handle) : null;
@@ -125,8 +132,10 @@ export async function getStorefrontModel(
     throw new Error(`Published prepared model registry entry missing for ${product.handle}`);
   }
   return {
+    fetched: true,
     eligible: true,
     available: true,
+    imageUrl,
     productHandle: product.handle,
     title: product.title,
     modelUrl: resolveModelUrl(model.optimizedModelUrl, appBaseUrl),

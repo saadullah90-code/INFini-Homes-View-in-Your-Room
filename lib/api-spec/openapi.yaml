@@ -766,12 +766,14 @@ components:
     StorefrontModel:
       type: object
       description: >
-        Only ever contains public storefront eligibility and already-published
-        model data. Unknown or ineligible products have eligible:false and
-        available:false.
+        Public fetched-product status, eligibility and already-published model
+        data. Unknown/sample products have fetched:false. Fetched but ineligible
+        products have fetched:true, eligible:false and available:false.
       properties:
+        fetched: { type: boolean }
         eligible: { type: boolean }
         available: { type: boolean }
+        imageUrl: { type: string }
         productHandle: { type: string }
         title: { type: string }
         modelUrl: { type: string }
@@ -783,6 +785,7 @@ components:
             - type: "null"
         modelNotice: { type: string }
       required:
+        - fetched
         - eligible
         - available
 
