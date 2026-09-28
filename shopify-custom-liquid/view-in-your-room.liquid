@@ -60,21 +60,21 @@
       <section class="viyr-fit" data-viyr-fit hidden aria-label="Product size and room fit calculator">
         <button type="button" class="viyr-qr-btn" data-viyr-size-back>← Back to preview and QR</button>
         <h3>Enter your dimensions</h3>
-        <p>Compare your product with your wall, floor, or both. Measurements are in cm; no dimensions are estimated from the image.</p>
+        <p>Compare product and room sizes in cm. Photos do not provide measurements.</p>
         <label for="viyr-size-choice-{{ product.id }}">Product size</label>
         <select id="viyr-size-choice-{{ product.id }}" data-viyr-size-choice>
           {% for option in product.options_with_values %}
             {% assign size_option_name = option.name | downcase %}
             {% if size_option_name contains 'size' or size_option_name contains 'dimension' %}
               {% for value in option.values %}
-                <option value="shopify:{{ value | escape }}">Shopify size: {{ value | escape }}</option>
+                <option value="shopify:{{ value | escape }}" {% if value == option.selected_value %}selected{% endif %}>Shopify size: {{ value | escape }}</option>
               {% endfor %}
             {% endif %}
           {% endfor %}
           <option value="custom">Custom size (planning only)</option>
         </select>
-        <p class="viyr-fit__note" data-viyr-size-source>Enter the product's real measurements below. Shopify size labels alone do not tell us width, depth and height.</p>
-        <div class="viyr-fit__fields">
+        <p class="viyr-fit__note" data-viyr-size-source></p>
+        <div class="viyr-fit__fields" data-viyr-product-fields hidden>
           <label>Product width <input data-viyr-product-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
           <label>Product depth <input data-viyr-product-depth type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
           <label>Product height <input data-viyr-product-height type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
@@ -97,7 +97,7 @@
           </fieldset>
         </div>
         <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
-        <p class="viyr-fit__note">Remaining width assumes centered placement. Enter back gap separately; floor clearance is space <strong>in front</strong> of the product. Allow room for doors and walking. Custom sizes are not confirmed variants. Photo preview is not to scale.</p>
+        <p class="viyr-fit__note">Remaining width assumes centered placement. Floor clearance is space <strong>in front</strong>. Allow room for doors and walking. Custom sizes are not confirmed variants. Photo is not to scale.</p>
       </section>
     </div>
   </div>
@@ -120,99 +120,100 @@
   .viyr-root { all: initial; display: block; font-family: system-ui, Arial, sans-serif; }
   .viyr-root *, .viyr-root *::before, .viyr-root *::after { box-sizing: border-box; }
 
-  .viyr-button { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0; padding: 12px 20px; background: #111827; color: #fff; border: none; border-radius: 999px; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; }
-  .viyr-button:hover { background: #1f2937; }
-  .viyr-button:active { transform: scale(0.98); }
-  .viyr-button[hidden] { display: none; }
+  .viyr-button{display:inline-flex;align-items:center;gap:8px;margin:12px 0;padding:12px 20px;background:#111827;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:600;line-height:1;cursor:pointer}
+  .viyr-button:hover{background:#1f2937}
+  .viyr-button:active{transform:scale(.98)}
+  .viyr-button[hidden]{display:none}
 
-  .viyr-modal { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; }
-  .viyr-modal[hidden] { display: none; }
-  .viyr-modal__backdrop { position: absolute; inset: 0; background: rgba(17,24,39,.6); }
-  .viyr-modal__panel { position: relative; z-index: 1; width: min(920px,94vw); max-height: 90vh; overflow: hidden; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; }
-  .viyr-modal__close { position: absolute; top: 10px; right: 12px; z-index: 2; width: 36px; height: 36px; border-radius: 999px; border: none; background: rgba(255,255,255,.9); color: #111827; font-size: 22px; line-height: 1; cursor: pointer; }
-  .viyr-modal__body { display: flex; flex-direction: column; height: 100%; }
-  .viyr-modal__body[hidden] { display: none; }
+  .viyr-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center}
+  .viyr-modal[hidden]{display:none}
+  .viyr-modal__backdrop{position:absolute;inset:0;background:rgba(17,24,39,.6)}
+  .viyr-modal__panel{position:relative;z-index:1;width:min(920px,94vw);max-height:90vh;overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column}
+  .viyr-modal__close{position:absolute;top:10px;right:12px;z-index:2;width:36px;height:36px;border-radius:999px;border:none;background:rgba(255,255,255,.9);color:#111827;font-size:22px;line-height:1;cursor:pointer}
+  .viyr-modal__body{display:flex;flex-direction:column;height:100%}
+  .viyr-modal__body[hidden]{display:none}
   @media (min-width: 720px) {
-    .viyr-modal__body { flex-direction: row; }
+    .viyr-modal__body{flex-direction:row}
   }
 
-  .viyr-viewer-wrap { position: relative; flex: 1 1 60%; min-height: 320px; background: #f3f4f6; overflow: hidden; }
-  .viyr-viewer-wrap model-viewer { width: 100%; height: 100%; min-height: 320px; --poster-color: transparent; }
-  .viyr-viewer-wrap model-viewer[hidden] { display: none; }
-  .viyr-camera-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .viyr-camera-stage { position: fixed; inset: 0; z-index: 2147483001; background: #111; color: #fff; overflow: hidden; }
-  .viyr-camera-stage[hidden] { display: none; }
-  .viyr-camera-stage .viyr-product-image { z-index: 1; }
-  .viyr-camera-stage__back { position: absolute; z-index: 2; top: max(16px, env(safe-area-inset-top)); left: 16px; padding: 12px 16px; border: 0; border-radius: 8px; background: #fff; color: #111827; font-size: 14px; font-weight: 600; }
-  .viyr-camera-stage__controls { position: absolute; z-index: 2; bottom: max(16px, env(safe-area-inset-bottom)); left: 16px; right: 16px; padding: 12px; border-radius: 12px; background: rgba(17,24,39,.82); font-size: 12px; }
-  .viyr-camera-stage__controls p { margin: 0 0 8px; }
-  .viyr-camera-stage__controls .viyr-qr-btn { margin: 0 0 8px; }
-  .viyr-camera-stage .viyr-image-size { color: #fff; }
-  .viyr-product-image { position: absolute; top: 50%; left: 50%; max-width: 86%; max-height: 86%; width: auto; height: auto; object-fit: contain; cursor: grab; touch-action: none; user-select: none; -webkit-user-drag: none; transform: translate(-50%,-50%) translate(var(--move-x,0px),var(--move-y,0px)) scale(var(--size,1)); filter: drop-shadow(0 7px 8px rgba(0,0,0,.18)); }
-  .viyr-product-image:active { cursor: grabbing; }
-  .viyr-camera-video[hidden], .viyr-product-image[hidden] { display: none; }
-  .viyr-image-size { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4b5563; }
-  .viyr-image-size[hidden] { display: none; }
-  .viyr-size-row { display: flex; align-items: center; gap: 10px; }
-  .viyr-size-row input { width: 150px; max-width: 100%; flex: 1; }
-  .viyr-size-row button { border: 0; border-radius: 6px; padding: 6px 12px; background: #eee; color: #111; font-size: 18px; touch-action: manipulation; }
+  .viyr-viewer-wrap{position:relative;flex:1 1 60%;min-height:320px;background:#f3f4f6;overflow:hidden}
+  .viyr-viewer-wrap model-viewer{width:100%;height:100%;min-height:320px;--poster-color:transparent}
+  .viyr-viewer-wrap model-viewer[hidden]{display:none}
+  .viyr-camera-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .viyr-camera-stage{position:fixed;inset:0;z-index:2147483001;background:#111;color:#fff;overflow:hidden}
+  .viyr-camera-stage[hidden]{display:none}
+  .viyr-camera-stage .viyr-product-image{z-index:1}
+  .viyr-camera-stage__back{position:absolute;z-index:2;top:max(16px, env(safe-area-inset-top));left:16px;padding:12px 16px;border:0;border-radius:8px;background:#fff;color:#111827;font-size:14px;font-weight:600}
+  .viyr-camera-stage__controls{position:absolute;z-index:2;bottom:max(16px, env(safe-area-inset-bottom));left:16px;right:16px;padding:12px;border-radius:12px;background:rgba(17,24,39,.82);font-size:12px}
+  .viyr-camera-stage__controls p{margin:0 0 8px}
+  .viyr-camera-stage__controls .viyr-qr-btn{margin:0 0 8px}
+  .viyr-camera-stage .viyr-image-size{color:#fff}
+  .viyr-product-image{position:absolute;top:50%;left:50%;max-width:86%;max-height:86%;width:auto;height:auto;object-fit:contain;cursor:grab;touch-action:none;user-select:none;-webkit-user-drag:none;transform:translate(-50%,-50%) translate(var(--move-x,0px),var(--move-y,0px)) scale(var(--size,1));filter:drop-shadow(0 7px 8px rgba(0,0,0,.18))}
+  .viyr-product-image:active{cursor:grabbing}
+  .viyr-camera-video[hidden],.viyr-product-image[hidden]{display:none}
+  .viyr-image-size{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#4b5563}
+  .viyr-image-size[hidden]{display:none}
+  .viyr-size-row{display:flex;align-items:center;gap:10px}
+  .viyr-size-row input{width:150px;max-width:100%;flex:1}
+  .viyr-size-row button{border:0;border-radius:6px;padding:6px 12px;background:#eee;color:#111;font-size:18px;touch-action:manipulation}
 
-  .viyr-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #4b5563; font-size: 14px; text-align: center; padding: 20px; }
-  .viyr-state[hidden] { display: none; }
-  .viyr-spinner { width: 32px; height: 32px; border-radius: 999px; border: 3px solid #e5e7eb; border-top-color: #111827; animation: viyr-spin .8s linear infinite; }
-  @keyframes viyr-spin { to { transform: rotate(360deg); } }
+  .viyr-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#4b5563;font-size:14px;text-align:center;padding:20px}
+  .viyr-state[hidden]{display:none}
+  .viyr-spinner{width:32px;height:32px;border-radius:999px;border:3px solid #e5e7eb;border-top-color:#111827;animation:viyr-spin .8s linear infinite}
+  @keyframes viyr-spin{to{transform:rotate(360deg)}}
 
-  .viyr-side { flex: 1 1 40%; padding: 20px 24px 24px; overflow-y: auto; display: flex; flex-direction: column; }
-  .viyr-side__title { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: #111827; }
-  .viyr-side__hint { margin: 0 0 16px; font-size: 13px; color: #6b7280; }
-  .viyr-side__dimensions { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: #111827; }
-  .viyr-side__notice { margin: 0 0 10px; font-size: 12px; line-height: 1.4; color: #4b5563; }
-  .viyr-side__dimensions[hidden], .viyr-side__notice[hidden] { display: none; }
-  .viyr-retry-btn, .viyr-qr-btn { padding: 10px 16px; border: 1px solid #111827; border-radius: 8px; background: #fff; color: #111827; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .viyr-retry-btn[hidden], .viyr-qr-btn[hidden] { display: none; }
-  .viyr-qr-btn { align-self: flex-start; margin: 8px 0; }
+  .viyr-side{flex:1 1 40%;padding:20px 24px 24px;overflow-y:auto;display:flex;flex-direction:column}
+  .viyr-side__title{margin:0 0 4px;font-size:18px;font-weight:700;color:#111827}
+  .viyr-side__hint{margin:0 0 16px;font-size:13px;color:#6b7280}
+  .viyr-side__dimensions{margin:0 0 6px;font-size:14px;font-weight:600;color:#111827}
+  .viyr-side__notice{margin:0 0 10px;font-size:12px;line-height:1.4;color:#4b5563}
+  .viyr-side__dimensions[hidden],.viyr-side__notice[hidden]{display:none}
+  .viyr-retry-btn,.viyr-qr-btn{padding:10px 16px;border:1px solid #111827;border-radius:8px;background:#fff;color:#111827;font-size:14px;font-weight:600;cursor:pointer}
+  .viyr-retry-btn[hidden],.viyr-qr-btn[hidden]{display:none}
+  .viyr-qr-btn{align-self:flex-start;margin:8px 0}
 
-  .viyr-ar-btn { margin: 4px 0 6px; padding: 12px 16px; border: none; border-radius: 10px; background: #111827; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .viyr-ar-btn:hover { background: #1f2937; }
-  .viyr-ar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .viyr-ar-btn[hidden] { display: none; }
-  .viyr-ar-note { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
-  .viyr-ar-note[hidden] { display: none; }
+  .viyr-ar-btn{margin:4px 0 6px;padding:12px 16px;border:none;border-radius:10px;background:#111827;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+  .viyr-ar-btn:hover{background:#1f2937}
+  .viyr-ar-btn:disabled{opacity:.6;cursor:not-allowed}
+  .viyr-ar-btn[hidden]{display:none}
+  .viyr-ar-note{font-size:12px;color:#6b7280;margin:0 0 12px}
+  .viyr-ar-note[hidden]{display:none}
 
-  .viyr-qr { margin-top: auto; padding-top: 16px; border-top: 1px solid #e5e7eb; }
-  .viyr-qr[hidden] { display: none; }
-  .viyr-qr__label { font-size: 13px; color: #374151; margin: 0 0 10px; font-weight: 600; }
-  .viyr-qr__canvas { display: inline-block; line-height: 0; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e5e7eb; }
-  .viyr-qr__fallback { font-size: 12px; color: #6b7280; }
-  .viyr-qr__fallback[hidden] { display: none; }
+  .viyr-qr{margin-top:auto;padding-top:16px;border-top:1px solid #e5e7eb}
+  .viyr-qr[hidden]{display:none}
+  .viyr-qr__label{font-size:13px;color:#374151;margin:0 0 10px;font-weight:600}
+  .viyr-qr__canvas{display:inline-block;line-height:0;background:#fff;padding:8px;border-radius:8px;border:1px solid #e5e7eb}
+  .viyr-qr__fallback{font-size:12px;color:#6b7280}
+  .viyr-qr__fallback[hidden]{display:none}
 
-  .viyr-fit { overflow-y: auto; padding: 22px; color: #172333; }
-  .viyr-fit[hidden] { display: none; }
-  .viyr-fit h3 { margin: 14px 0 6px; font-size: 20px; }
-  .viyr-fit p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
-  .viyr-fit label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
-  .viyr-fit input, .viyr-fit select { width: 100%; min-height: 40px; border: 1px solid #aab6bd; border-radius: 7px; padding: 8px 10px; color: #172333; background: white; font: inherit; }
-  .viyr-fit select { max-width: 440px; margin: 6px 0 10px; }
-  .viyr-fit__fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .viyr-fit__spaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
-  .viyr-fit__spaces fieldset { margin: 0; min-width: 0; padding: 12px; border: 1px solid #d9e1e5; border-radius: 8px; }
-  .viyr-fit__spaces legend { padding: 0 4px; font-size: 13px; font-weight: 700; }
-  .viyr-fit__spaces .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .viyr-fit__result { padding: 12px; border-radius: 8px; background: #eaf2f1; font-size: 13px; line-height: 1.6; }
-  .viyr-fit__result p { margin: 0 0 5px; }
-  .viyr-fit__result p:last-child { margin-bottom: 0; }
-  .viyr-fit__result .viyr-fit__warning { color: #9a3412; font-weight: 600; }
-  .viyr-fit .viyr-fit__note { margin: 10px 0; font-size: 12px; color: #526270; }
+  .viyr-fit{overflow-y:auto;padding:22px;color:#172333}
+  .viyr-fit[hidden]{display:none}
+  .viyr-fit h3{margin:14px 0 6px;font-size:20px}
+  .viyr-fit p{margin:0 0 14px;font-size:13px;line-height:1.45}
+  .viyr-fit label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
+  .viyr-fit input,.viyr-fit select{width:100%;min-height:40px;border:1px solid #aab6bd;border-radius:7px;padding:8px 10px;color:#172333;background:white;font:inherit}
+  .viyr-fit select{max-width:440px;margin:6px 0 10px}
+  .viyr-fit__fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .viyr-fit__fields[hidden]{display:none}
+  .viyr-fit__spaces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+  .viyr-fit__spaces fieldset{margin:0;min-width:0;padding:12px;border:1px solid #d9e1e5;border-radius:8px}
+  .viyr-fit__spaces legend{padding:0 4px;font-size:13px;font-weight:700}
+  .viyr-fit__spaces .viyr-fit__fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .viyr-fit__result{padding:12px;border-radius:8px;background:#eaf2f1;font-size:13px;line-height:1.6}
+  .viyr-fit__result p{margin:0 0 5px}
+  .viyr-fit__result p:last-child{margin-bottom:0}
+  .viyr-fit__result .viyr-fit__warning{color:#9a3412;font-weight:600}
+  .viyr-fit .viyr-fit__note{margin:10px 0;font-size:12px;color:#526270}
 
   @media (max-width: 719px) {
-    .viyr-modal__panel { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
-    .viyr-modal__body { min-height: 0; }
-    .viyr-viewer-wrap { flex: 1 1 auto; min-height: 240px; }
-    .viyr-side { order: -1; flex: 0 0 auto; padding: 16px 20px 10px; }
-    .viyr-ar-btn { width: 100%; padding: 15px 16px; font-size: 16px; }
-    .viyr-fit { padding: 18px; }
-    .viyr-fit__spaces { grid-template-columns: 1fr; }
-    .viyr-fit__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .viyr-modal__panel{width:100vw;height:100vh;max-height:100vh;border-radius:0}
+    .viyr-modal__body{min-height:0}
+    .viyr-viewer-wrap{flex:1 1 auto;min-height:240px}
+    .viyr-side{order:-1;flex:0 0 auto;padding:16px 20px 10px}
+    .viyr-ar-btn{width:100%;padding:15px 16px;font-size:16px}
+    .viyr-fit{padding:18px}
+    .viyr-fit__spaces{grid-template-columns:1fr}
+    .viyr-fit__fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
 
 </style>
@@ -294,6 +295,7 @@
     fitBack: root.querySelector("[data-viyr-size-back]"),
     sizeChoice: root.querySelector("[data-viyr-size-choice]"),
     sizeSource: root.querySelector("[data-viyr-size-source]"),
+    productFields: root.querySelector("[data-viyr-product-fields]"),
     fitResult: root.querySelector("[data-viyr-fit-result]"),
   };
 
@@ -404,8 +406,6 @@
       ? "View Product Image & Check Size"
       : modelData ? "View in Your Room & Check Size" : "Check Size & Room Fit";
   }
-  let lastSizeChoice = els.sizeChoice.value;
-  const sizeDrafts = new Map();
   const productFields = ["product-width", "product-depth", "product-height"];
 
   function fitField(name) {
@@ -416,6 +416,28 @@
     if (!raw) return null;
     const value = Number(raw);
     return Number.isFinite(value) && value >= (allowZero ? 0 : 0.1) && value <= 100000 ? value : NaN;
+  }
+  function shopifySizeDimensions(label) {
+    if (!/cm\b/i.test(label)) return null;
+    const parts = [...label.matchAll(/(\d+(?:\.\d+)?)\s*(?:cm\s*)?(width|depth|length|height|w|d|l|h)\b/gi)];
+    if (parts.length !== 3) return null;
+    const dims = {};
+    for (const [, raw, axis] of parts) {
+      const key = /^w/i.test(axis) ? "width" : /^[dl]/i.test(axis) ? "depth" : "height";
+      const value = Number(raw);
+      if (dims[key] || !Number.isFinite(value) || value < 0.1 || value > 100000) return null;
+      dims[key] = value;
+    }
+    return ["width", "depth", "height"].every((key) => dims[key]) ? dims : null;
+  }
+  function chosenProductDimensions() {
+    if (els.sizeChoice.value === "custom") return productFields.map((field) => fitNumber(field));
+    if (els.sizeChoice.value === "model") {
+      const d = modelData && modelData.dimensions;
+      return d ? [d.width, d.depth, d.height] : null;
+    }
+    const d = shopifySizeDimensions(els.sizeChoice.value.slice(8));
+    return d ? [d.width, d.depth, d.height] : null;
   }
   function fitFormat(value) {
     return (Math.round(value * 10) / 10).toLocaleString("en-US", { maximumFractionDigits: 1 });
@@ -434,13 +456,14 @@
   }
   function renderFit() {
     els.fitResult.replaceChildren();
-    const width = fitNumber("product-width");
-    const depth = fitNumber("product-depth");
-    const height = fitNumber("product-height");
-    if (![width, depth, height].every((v) => v !== null && Number.isFinite(v))) {
-      fitLine("Enter the product's width, depth and height in cm to calculate its space.", true);
+    const chosen = chosenProductDimensions();
+    if (!chosen || !chosen.every((v) => v !== null && Number.isFinite(v) && v > 0)) {
+      fitLine(els.sizeChoice.value === "custom"
+        ? "Enter the product's width, depth and height in cm."
+        : "This size needs W, L/D and H in cm in its Shopify size label. No measurements were guessed.", true);
       return;
     }
+    const [width, depth, height] = chosen;
     fitLine("Product: " + fitFormat(width) + " W × " + fitFormat(depth) + " D × " + fitFormat(height) + " H cm.");
     fitLine("Floor footprint: " + fitFormat(width) + " × " + fitFormat(depth) + " cm = "
       + (width * depth / 10000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + " m².");
@@ -473,19 +496,15 @@
     if (!wallStarted && !floorStarted) fitLine("Add wall measurements, floor measurements, or both to see remaining space.");
   }
   function changeSizeChoice() {
-    sizeDrafts.set(lastSizeChoice, productFields.map((field) => fitField(field).value));
-    lastSizeChoice = els.sizeChoice.value;
-    let values = sizeDrafts.get(lastSizeChoice) || ["", "", ""];
-    if (lastSizeChoice === "model" && modelData && modelData.dimensions && !sizeDrafts.has("model")) {
-      const dims = modelData.dimensions;
-      values = [dims.width, dims.depth, dims.height];
-    }
-    productFields.forEach((field, index) => { fitField(field).value = values[index]; });
-    els.sizeSource.textContent = lastSizeChoice === "model"
-      ? "3D reference measurements may differ from other variants. Edit as needed."
-      : lastSizeChoice === "custom"
-      ? "Custom measurements are for planning only, not an orderable size."
-      : "Shopify has no verified measurements for this size. Enter the actual dimensions.";
+    const choice = els.sizeChoice.value;
+    els.productFields.hidden = choice !== "custom";
+    els.sizeSource.textContent = choice === "custom"
+      ? "Enter product measurements in cm. Custom size is for planning only."
+      : choice === "model"
+      ? "3D reference measurements may differ from your selected Shopify variant."
+      : shopifySizeDimensions(choice.slice(8))
+      ? "Product measurements from the Shopify size label (cm). Photo is not to scale."
+      : "Add W, L/D and H in cm to this Shopify size label to calculate room fit.";
     renderFit();
   }
   function addReferenceSize() {
@@ -505,7 +524,7 @@
   function showFitPanel() {
     els.body.hidden = true;
     els.fit.hidden = false;
-    renderFit();
+    changeSizeChoice();
     els.fitBack.focus();
   }
 
@@ -874,6 +893,7 @@
     openModal();
   });
   els.sizeChoice.addEventListener("change", changeSizeChoice);
+  changeSizeChoice();
   root.querySelectorAll(".viyr-fit input").forEach((field) => field.addEventListener("input", renderFit));
   els.qrBtn.addEventListener("click", () => {
     if (isMobileDevice() || els.modal.hidden) return;
