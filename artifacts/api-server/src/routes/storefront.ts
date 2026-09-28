@@ -72,6 +72,7 @@ function isRateLimited(key: string): boolean {
 }
 
 router.get("/storefront/model", storefrontCors, async (req, res): Promise<void> => {
+  res.set("Cache-Control", "no-store");
   const clientKey = req.ip ?? "unknown";
   if (isRateLimited(clientKey)) {
     res.status(429).json({ error: "Too many requests. Please try again shortly." });

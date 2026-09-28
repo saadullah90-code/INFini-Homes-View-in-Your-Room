@@ -5,6 +5,22 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AdminConsoleLogin {
+  /** @minLength 1 */
+  password: string;
+}
+
+export interface AdminConsoleLicenseUpdate {
+  enabled: boolean;
+  expiresOn: string;
+}
+
+export interface AdminConsoleLicense {
+  enabled: boolean;
+  expiresAt: string;
+  active: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }

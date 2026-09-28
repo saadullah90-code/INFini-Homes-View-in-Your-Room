@@ -2,6 +2,7 @@ import { db, productsTable, productModelsTable, logEntriesTable } from "@workspa
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { isEligibleProduct } from "./eligibility";
+import { isStorefrontActive } from "./settings-service";
 import { getPreparedModel, resolveModelUrl } from "./prepared-models";
 
 // Public, shop-restricted read model for the storefront Custom Liquid
@@ -103,6 +104,9 @@ export async function getStorefrontModel(
   handle: string,
   appBaseUrl: string,
 ): Promise<StorefrontModelResult> {
+  if (!(await isStorefrontActive())) {
+    return { fetched: false, eligible: false, available: false };
+  }
   const [product] = await db
     .select()
     .from(productsTable)

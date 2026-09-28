@@ -306,6 +306,66 @@ paths:
               schema:
                 $ref: "#/components/schemas/AppSettings"
 
+  /admin-console/login:
+    post:
+      operationId: loginAdminConsole
+      tags: [admin]
+      summary: Start a password-protected admin console session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminConsoleLogin"
+      responses:
+        "200":
+          description: Signed session cookie issued
+        "401":
+          description: Invalid password
+
+  /admin-console/logout:
+    post:
+      operationId: logoutAdminConsole
+      tags: [admin]
+      summary: End admin console session
+      responses:
+        "204":
+          description: Logged out
+
+  /admin-console/license:
+    get:
+      operationId: getAdminConsoleLicense
+      tags: [admin]
+      summary: Get storefront feature status (requires admin session)
+      responses:
+        "200":
+          description: Current feature status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminConsoleLicense"
+        "401":
+          description: Login required
+    patch:
+      operationId: updateAdminConsoleLicense
+      tags: [admin]
+      summary: Set storefront availability and renewal date (requires admin session)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminConsoleLicenseUpdate"
+      responses:
+        "200":
+          description: Updated feature status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminConsoleLicense"
+        "401":
+          description: Login required
+
   /status:
     get:
       operationId: getApiStatus
@@ -504,6 +564,24 @@ components:
       schema:
         type: integer
   schemas:
+    AdminConsoleLogin:
+      type: object
+      properties:
+        password: { type: string, minLength: 1 }
+      required: [password]
+    AdminConsoleLicenseUpdate:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        expiresOn: { type: string, format: date }
+      required: [enabled, expiresOn]
+    AdminConsoleLicense:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        expiresAt: { type: string, format: date-time }
+        active: { type: boolean }
+      required: [enabled, expiresAt, active]
     HealthStatus:
       type: object
       properties:

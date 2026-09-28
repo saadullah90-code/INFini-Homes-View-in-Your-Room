@@ -1,4 +1,5 @@
 import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +12,9 @@ export const appSettingsTable = pgTable("app_settings", {
   defaultUnit: text("default_unit").notNull().default("cm"),
   // Stays false until the merchant explicitly approves the first live provider generation.
   meshyLiveGenerationEnabled: boolean("meshy_live_generation_enabled").notNull().default(false),
+  storefrontEnabled: boolean("storefront_enabled").notNull().default(true),
+  storefrontExpiresAt: timestamp("storefront_expires_at", { withTimezone: true })
+    .notNull().default(sql`now() + interval '1 month'`),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

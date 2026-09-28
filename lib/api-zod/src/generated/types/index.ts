@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminConsoleLicense';
+export * from './adminConsoleLicenseUpdate';
+export * from './adminConsoleLogin';
 export * from './apiStatus';
 export * from './appSettings';
 export * from './appSettingsDefaultUnit';

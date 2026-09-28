@@ -387,6 +387,50 @@ export const UpdateSettingsResponse = zod.object({
 
 
 /**
+ * @summary Start a password-protected admin console session
+ */
+
+
+
+export const LoginAdminConsoleBody = zod.object({
+  "password": zod.string().min(1)
+})
+
+export const LoginAdminConsoleResponse = zod.unknown()
+
+
+/**
+ * @summary End admin console session
+ */
+export const LogoutAdminConsoleResponse = zod.void()
+
+
+/**
+ * @summary Get storefront feature status (requires admin session)
+ */
+export const GetAdminConsoleLicenseResponse = zod.object({
+  "enabled": zod.boolean(),
+  "expiresAt": zod.coerce.date(),
+  "active": zod.boolean()
+})
+
+
+/**
+ * @summary Set storefront availability and renewal date (requires admin session)
+ */
+export const UpdateAdminConsoleLicenseBody = zod.object({
+  "enabled": zod.boolean(),
+  "expiresOn": zod.coerce.date()
+})
+
+export const UpdateAdminConsoleLicenseResponse = zod.object({
+  "enabled": zod.boolean(),
+  "expiresAt": zod.coerce.date(),
+  "active": zod.boolean()
+})
+
+
+/**
  * @summary Provider and connection status (never faked)
  */
 export const GetApiStatusResponse = zod.object({

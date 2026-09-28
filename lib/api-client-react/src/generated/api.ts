@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminConsoleLicense,
+  AdminConsoleLicenseUpdate,
+  AdminConsoleLogin,
   ApiStatus,
   AppSettings,
   ArExperience,
@@ -1261,6 +1264,333 @@ export const useUpdateSettings = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateSettingsMutationOptions(options));
+    }
+
+export const getLoginAdminConsoleUrl = () => {
+
+
+
+
+  return `/api/admin-console/login`
+}
+
+/**
+ * @summary Start a password-protected admin console session
+ */
+export const loginAdminConsole = async (adminConsoleLogin: AdminConsoleLogin, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getLoginAdminConsoleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminConsoleLogin)
+  }
+);}
+
+
+
+
+
+export const getLoginAdminConsoleMutationKey = () => ['loginAdminConsole'] as const;
+
+export const getLoginAdminConsoleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginAdminConsole>>, TError,LoginAdminConsoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof loginAdminConsole>>, TError,LoginAdminConsoleMutationVariables, TContext> => {
+
+const mutationKey = getLoginAdminConsoleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof loginAdminConsole>>, LoginAdminConsoleMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  loginAdminConsole(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LoginAdminConsoleMutationResult = NonNullable<Awaited<ReturnType<typeof loginAdminConsole>>>
+    export type LoginAdminConsoleMutationBody = BodyType<AdminConsoleLogin>
+    export type LoginAdminConsoleMutationError = ErrorType<void>
+    export type LoginAdminConsoleMutationVariables = {data: BodyType<AdminConsoleLogin>}
+
+    /**
+ * @summary Start a password-protected admin console session
+ */
+export const useLoginAdminConsole = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginAdminConsole>>, TError,LoginAdminConsoleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof loginAdminConsole>>,
+        TError,
+        LoginAdminConsoleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLoginAdminConsoleMutationOptions(options));
+    }
+
+export const getLogoutAdminConsoleUrl = () => {
+
+
+
+
+  return `/api/admin-console/logout`
+}
+
+/**
+ * @summary End admin console session
+ */
+export const logoutAdminConsole = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getLogoutAdminConsoleUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutAdminConsoleMutationKey = () => ['logoutAdminConsole'] as const;
+
+export const getLogoutAdminConsoleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAdminConsole>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutAdminConsole>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutAdminConsoleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutAdminConsole>>, void> = () => {
+
+
+          return  logoutAdminConsole(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutAdminConsoleMutationResult = NonNullable<Awaited<ReturnType<typeof logoutAdminConsole>>>
+
+    export type LogoutAdminConsoleMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary End admin console session
+ */
+export const useLogoutAdminConsole = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutAdminConsole>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutAdminConsole>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutAdminConsoleMutationOptions(options));
+    }
+
+export const getGetAdminConsoleLicenseUrl = () => {
+
+
+
+
+  return `/api/admin-console/license`
+}
+
+/**
+ * @summary Get storefront feature status (requires admin session)
+ */
+export const getAdminConsoleLicense = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminConsoleLicense> => {
+
+  return customFetch<AdminConsoleLicense>(getGetAdminConsoleLicenseUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminConsoleLicenseQueryKey = () => {
+    return [
+    `/api/admin-console/license`
+    ] as const;
+    }
+
+
+export const getGetAdminConsoleLicenseQueryOptions = <TData = Awaited<ReturnType<typeof getAdminConsoleLicense>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminConsoleLicense>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminConsoleLicenseQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminConsoleLicense>>> = ({ signal }) => getAdminConsoleLicense({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminConsoleLicense>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminConsoleLicenseQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminConsoleLicense>>>
+export type GetAdminConsoleLicenseQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get storefront feature status (requires admin session)
+ */
+
+export function useGetAdminConsoleLicense<TData = Awaited<ReturnType<typeof getAdminConsoleLicense>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminConsoleLicense>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminConsoleLicenseQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdminConsoleLicenseUrl = () => {
+
+
+
+
+  return `/api/admin-console/license`
+}
+
+/**
+ * @summary Set storefront availability and renewal date (requires admin session)
+ */
+export const updateAdminConsoleLicense = async (adminConsoleLicenseUpdate: AdminConsoleLicenseUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminConsoleLicense> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminConsoleLicense>(getUpdateAdminConsoleLicenseUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminConsoleLicenseUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminConsoleLicenseMutationKey = () => ['updateAdminConsoleLicense'] as const;
+
+export const getUpdateAdminConsoleLicenseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminConsoleLicense>>, TError,UpdateAdminConsoleLicenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminConsoleLicense>>, TError,UpdateAdminConsoleLicenseMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAdminConsoleLicenseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminConsoleLicense>>, UpdateAdminConsoleLicenseMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateAdminConsoleLicense(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminConsoleLicenseMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminConsoleLicense>>>
+    export type UpdateAdminConsoleLicenseMutationBody = BodyType<AdminConsoleLicenseUpdate>
+    export type UpdateAdminConsoleLicenseMutationError = ErrorType<void>
+    export type UpdateAdminConsoleLicenseMutationVariables = {data: BodyType<AdminConsoleLicenseUpdate>}
+
+    /**
+ * @summary Set storefront availability and renewal date (requires admin session)
+ */
+export const useUpdateAdminConsoleLicense = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminConsoleLicense>>, TError,UpdateAdminConsoleLicenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminConsoleLicense>>,
+        TError,
+        UpdateAdminConsoleLicenseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateAdminConsoleLicenseMutationOptions(options));
     }
 
 export const getGetApiStatusUrl = () => {

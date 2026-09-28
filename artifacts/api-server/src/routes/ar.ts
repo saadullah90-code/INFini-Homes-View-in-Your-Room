@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, productModelsTable, productsTable } from "@workspace/db";
 import { GetArExperienceParams, GetArExperienceResponse } from "@workspace/api-zod";
 import { getAppBaseUrl } from "../lib/shopify-config";
+import { isStorefrontActive } from "../lib/settings-service";
 import { getPreparedModel, resolveModelUrl } from "../lib/prepared-models";
 
 const router: IRouter = Router();
@@ -10,6 +11,10 @@ const router: IRouter = Router();
 // Public route -- resolves a signed handoff token (generated at publish
 // time) to the published model, for the desktop -> mobile QR/AR handoff.
 router.get("/ar/:token", async (req, res): Promise<void> => {
+  if (!(await isStorefrontActive())) {
+    res.status(404).json({ error: "View in Your Room is not currently available." });
+    return;
+  }
   const params = GetArExperienceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

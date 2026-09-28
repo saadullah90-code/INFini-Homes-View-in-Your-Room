@@ -13,6 +13,7 @@ import storefrontRouter from "./storefront";
 import liquidSourceRouter from "./liquid-source";
 import publicCatalogRouter from "./public-catalog";
 import storageRouter from "./storage";
+import adminConsoleRouter from "./admin-console";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(storefrontRouter);
 router.use(liquidSourceRouter);
 router.use(publicCatalogRouter);
 router.use(storageRouter);
+router.use(adminConsoleRouter);
 
 export default router;

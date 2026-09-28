@@ -13,6 +13,7 @@ import {
   type Product, type ProductModel, type ProductModelStatus, type ProviderStatus, type SettingsUpdateDefaultUnit
 } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { AdminConsoleButton } from '@/components/admin-console';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 25000, refetchOnWindowFocus: false } } });
 const stages: ProductModelStatus[] = ['PENDING','ELIGIBLE','QUEUED','PROCESSING','GENERATED','OPTIMIZING','DIMENSION_CALIBRATION','REVIEW','APPROVED','PUBLISHED','FAILED','CANCELLED','STALE'];
@@ -161,7 +162,10 @@ function LiquidSourceSection() {
         />
         <div className="grid-two" style={{ marginTop: 22 }}>
           <div>
-            <strong style={{ display: 'block', fontSize: 13, color: '#304a50', marginBottom: 10 }}>Copy instructions</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <AdminConsoleButton />
+              <strong style={{ fontSize: 13, color: '#304a50' }}>Copy instructions</strong>
+            </div>
             <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 7, fontSize: 12, color: '#4b5563' }}>
               <li>Shopify Admin → Online Store → Themes → Customize</li>
               <li>Open the Product template</li>

@@ -34,6 +34,11 @@ export async function getAppSettings() {
   return row;
 }
 
+export async function isStorefrontActive() {
+  const settings = await getAppSettings();
+  return settings.storefrontEnabled && settings.storefrontExpiresAt.getTime() > Date.now();
+}
+
 export async function updateAppSettings(
   patch: Partial<{
     maxConcurrentGenerations: number;
