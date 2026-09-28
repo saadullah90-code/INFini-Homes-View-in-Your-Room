@@ -32,7 +32,7 @@
 
         <div class="viyr-side">
           <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
-          <p class="viyr-side__hint" data-viyr-hint>3D: drag/zoom &middot; AR: pinch to resize, drag to place</p>
+          <p class="viyr-side__hint" data-viyr-hint>Pinch: zoom; slider: size</p>
           <p class="viyr-side__dimensions" data-viyr-dimensions hidden></p>
           <p class="viyr-side__notice" data-viyr-model-notice hidden></p>
           <p class="viyr-side__notice" data-viyr-size-note hidden></p>
@@ -42,7 +42,7 @@
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
           <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
-          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Preview size — pinch or slide
+          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Preview size
             <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Preview size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
           </div>
 
@@ -351,7 +351,7 @@
     els.cameraNote.textContent = "Starting camera…";
     els.cameraRetry.hidden = true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      els.cameraNote.textContent = "Camera unavailable. Use a phone over HTTPS.";
+      els.cameraNote.textContent = "Camera needs HTTPS.";
       return;
     }
     try {
@@ -367,7 +367,7 @@
       els.cameraVideo.hidden = false;
       await els.cameraVideo.play();
       if (request === cameraRequest) {
-        els.cameraNote.textContent = "2D photo overlay; drag or resize. Placement is not measured.";
+        els.cameraNote.textContent = "2D photo only; drag or resize.";
       }
     } catch (error) {
       if (request !== cameraRequest) return;
@@ -377,7 +377,7 @@
       els.cameraVideo.hidden = true;
       els.cameraRetry.hidden = false;
       els.cameraNote.textContent = error && error.name === "NotAllowedError"
-        ? "Camera permission was denied. Allow camera access in your browser."
+        ? "Camera denied. Allow access in browser."
         : "Camera could not start.";
     }
   }
@@ -393,7 +393,7 @@
     els.loading.hidden = true;
     els.error.hidden = !imageFailed;
     els.retry.hidden = true;
-    if (imageFailed) els.errorMessage.textContent = "Product photo unavailable. Check its Shopify media.";
+    if (imageFailed) els.errorMessage.textContent = "Product photo unavailable.";
     if (modelViewerEl) modelViewerEl.hidden = true;
     els.productImage.hidden = imageFailed;
     if (els.productImage.src !== productImageUrls[0]) els.productImage.src = productImageUrls[0];
@@ -658,7 +658,7 @@
     mv.addEventListener("load", onViewerLoad);
     mv.addEventListener("ar-status", (event) => {
       if (event.detail && event.detail.status === "failed" && !els.modal.hidden) {
-        showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+        showArNote("AR didn't open. Use the 3D preview.");
       }
     });
     return mv;
@@ -671,6 +671,7 @@
     els.error.hidden = true;
     els.retry.hidden = true;
     setupArButton();
+    updatePreviewScale();
   }
 
   function onViewerError() {
@@ -679,7 +680,7 @@
     els.loading.hidden = true;
     els.error.hidden = false;
     els.retry.hidden = false;
-    els.errorMessage.textContent = "We couldn't load the 3D model right now. Please try again in a moment.";
+    els.errorMessage.textContent = "3D model didn't load. Please retry.";
     setupArButton();
   }
 
@@ -689,6 +690,7 @@
   }
 
   function setupArButton() {
+    els.previewSizeWrap.hidden = viewerState !== "loaded";
     if (isMobileDevice()) {
       els.qrBtn.hidden = true;
       els.qrWrap.hidden = true;
@@ -697,9 +699,9 @@
       els.arBtn.textContent = viewerState === "loading" || viewerState === "idle"
         ? "Preparing AR…" : "View in your space (AR)";
       showArNote(viewerState === "unsupported"
-        ? "3D/AR needs WebGL2 enabled on this phone. Try opening this page in a supported mobile browser."
+        ? "3D/AR needs WebGL2 in this browser."
         : viewerState === "error"
-        ? "AR needs the 3D model to load first. Please close and reopen to retry."
+        ? "3D model failed to load. Reopen to retry."
         : viewerState !== "loaded"
         ? "Loading the 3D model before AR is available."
         : els.arBtn.disabled
@@ -780,15 +782,16 @@
       typeof dims[key] === "number" && Number.isFinite(dims[key]) && dims[key] > 0)
       && typeof dims.unit === "string" && /^[a-zA-Z]{1,12}$/.test(dims.unit);
     els.dimensions.hidden = !valid || useProductImage();
+    const scale = Number(els.previewSize.value) / 100;
     els.dimensions.textContent = valid
-      ? "Modeled preview size: " + dims.width + "W × " + dims.depth + "L × " + dims.height + "H " + dims.unit
+      ? "Preview " + els.previewSize.value + "%: " + ["width", "depth", "height"].map((key) => Math.round(dims[key] * scale * 10) / 10).join(" × ") + " " + dims.unit + " (W × D × H, visual)"
       : "";
     const notice = modelData && typeof modelData.modelNotice === "string" ? modelData.modelNotice.trim() : "";
     els.modelNotice.textContent = notice;
     els.modelNotice.hidden = !notice || useProductImage();
     els.sizeNote.hidden = !modelData || useProductImage();
     els.sizeNote.textContent = modelData
-      ? "3D preview shows one reference size" + (selectedVariantId() ? ", not your selected variant" : "") + ". Other sizes are not verified or resized."
+      ? "3D reference model" + (selectedVariantId() ? ", not your selected variant" : "") + ". Resizing is visual only; other sizes aren't verified."
       : "";
   }
 
@@ -837,7 +840,7 @@
         : availabilityFailed
         ? "3D status unavailable. Retry in a moment."
         : arOnly ? "3D/AR not published yet."
-        : "No 3D model yet. Enter dimensions to check room fit.";
+        : "No 3D model. Check room fit.";
       els.qrBtn.hidden = isMobileDevice();
       return;
     }
@@ -850,8 +853,8 @@
         els.error.hidden = false;
         els.retry.hidden = true;
         els.errorMessage.textContent = isMobileDevice()
-          ? "3D/AR needs WebGL2. Try a supported mobile browser."
-          : "3D needs WebGL2. Scan the QR code on a supported phone.";
+          ? "3D/AR needs a WebGL2 browser."
+          : "3D needs WebGL2. Try the QR on a phone.";
         setupArButton();
         return;
       }
@@ -939,14 +942,14 @@
       return;
     }
     try {
-      showArNote("Opening AR… Your browser may ask for camera access.");
+      showArNote("Opening AR… Allow camera if prompted.");
       Promise.resolve(modelViewerEl.activateAR()).catch((err) => {
         console.warn("[View in Your Room] AR launch failed:", err);
-        if (!els.modal.hidden) showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+        if (!els.modal.hidden) showArNote("AR didn't open. Use the 3D preview.");
       });
     } catch (err) {
       console.warn("[View in Your Room] AR launch failed:", err);
-      showArNote("AR couldn't open on this device. You can still explore the 3D model here.");
+      showArNote("AR didn't open. Use the 3D preview.");
     }
   });
   els.closeBtns.forEach((btn) => btn.addEventListener("click", closeModal));
@@ -967,19 +970,25 @@
     els.cameraButton.hidden = true;
     els.error.hidden = false;
     els.retry.hidden = true;
-    els.errorMessage.textContent = "Product photo unavailable. Check its Shopify media.";
+    els.errorMessage.textContent = "Product photo unavailable.";
   });
   els.cameraButton.addEventListener("click", startCamera);
   els.cameraRetry.addEventListener("click", startCamera);
   els.cameraBack.addEventListener("click", stopCamera);
   els.imageSize.addEventListener("input", positionProductImage);
+  function updatePreviewScale() {
+    if (modelViewerEl && !useProductImage()) modelViewerEl.scale = Array(3).fill(+els.previewSize.value / 100).join(" ");
+    renderModelDetails();
+  }
   root.querySelectorAll("[data-viyr-zoom]").forEach((button) => button.addEventListener("click", () => {
     els.imageSize.value = Math.max(50, Math.min(240, Number(els.imageSize.value) + Number(button.dataset.viyrZoom)));
     positionProductImage();
+    updatePreviewScale();
   }));
   els.previewSize.addEventListener("input", () => {
     els.imageSize.value = els.previewSize.value;
     positionProductImage();
+    updatePreviewScale();
   });
   [els.productImage, els.cameraImage].forEach((image) => {
     const points = new Map();
