@@ -111,17 +111,17 @@ export function AdminConsoleButton() {
           <h2 style={{ margin: 0, fontSize: 20 }}>Admin console</h2>
           <button type="button" className="btn btn-quiet" aria-label="Close admin console" onClick={() => setOpen(false)}>×</button>
         </div>
-        <p className="small" style={{ lineHeight: 1.6 }}>Control the Shopify View in Your Room feature. Access ends automatically after the renewal date.</p>
+        <p className="small" style={{ lineHeight: 1.6 }}>Only the Shopify View in Your Room feature switches off after the renewal date. This admin app stays open.</p>
         {loading ? <p role="status">Checking access…</p> : license ? <>
           <p role="status"><strong>Status: {license.active && enabled ? 'On' : enabled ? 'Expired' : 'Off'}</strong></p>
           <form onSubmit={save} style={{ display: 'grid', gap: 14 }}>
             <label className="field-label" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> App on
+              <input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Shopify feature on
             </label>
             <label className="field-label">Renewal date
               <input className="input" type="date" required value={expiresOn} onChange={event => setExpiresOn(event.target.value)} style={{ display: 'block', width: '100%', marginTop: 8 }} />
             </label>
-            <p className="small" style={{ margin: 0 }}>The feature remains available through the selected date (Pakistan time). Extend the date and switch on to renew. Existing 3D models are not deleted.</p>
+            <p className="small" style={{ margin: 0 }}>The Shopify feature remains available through the selected date (Pakistan time). Extend the date and switch it on to renew. The admin app and existing 3D models stay available.</p>
             <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
           </form>
           <button className="btn btn-quiet" type="button" onClick={logout} disabled={busy} style={{ marginTop: 10 }}>Log out</button>
