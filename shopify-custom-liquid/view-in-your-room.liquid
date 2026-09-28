@@ -32,7 +32,7 @@
 
         <div class="viyr-side">
           <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
-          <p class="viyr-side__hint" data-viyr-hint>Drag to rotate &middot; Pinch or scroll to zoom</p>
+          <p class="viyr-side__hint" data-viyr-hint>3D: drag/zoom &middot; AR: pinch to resize, drag to place</p>
           <p class="viyr-side__dimensions" data-viyr-dimensions hidden></p>
           <p class="viyr-side__notice" data-viyr-model-notice hidden></p>
           <p class="viyr-side__notice" data-viyr-size-note hidden></p>
@@ -651,7 +651,8 @@
     if (modelData.thumbnailUrl) mv.setAttribute("poster", modelData.thumbnailUrl);
     mv.setAttribute("shadow-intensity", "1");
     mv.setAttribute("ar", "");
-    if (modelData.dimensions) mv.setAttribute("ar-scale", "fixed");
+    mv.setAttribute("ar-scale", "auto");
+    mv.setAttribute("ar-placement", "floor");
     mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
     mv.addEventListener("error", onViewerError);
     mv.addEventListener("load", onViewerLoad);
