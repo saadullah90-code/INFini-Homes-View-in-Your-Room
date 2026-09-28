@@ -9,7 +9,7 @@
   data-shop-storefront-domain="{{ request.host }}"
 >
   <button type="button" class="viyr-button" data-viyr-open hidden>
-    <span data-viyr-button-label>Check Size &amp; Room Fit</span>
+    <span data-viyr-button-label>View Product in Your Room<br>&amp; Measure Your Size</span>
   </button>
 
   <div class="viyr-modal" data-viyr-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="View in Your Room">
@@ -19,13 +19,13 @@
 
       <div class="viyr-modal__body">
         <div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
-          <img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product image" draggable="false">
-          <div class="viyr-state viyr-state--loading" data-viyr-loading>
+          <img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product photo" draggable="false">
+          <div class="viyr-state" data-viyr-loading>
             <div class="viyr-spinner" aria-hidden="true"></div>
             <p>Loading 3D model…</p>
           </div>
-          <div class="viyr-state viyr-state--error" data-viyr-error hidden>
-            <p data-viyr-error-message>We couldn't load the 3D model right now. Please try again in a moment.</p>
+          <div class="viyr-state" data-viyr-error hidden>
+            <p data-viyr-error-message>3D model unavailable. Please try again.</p>
             <button type="button" class="viyr-retry-btn" data-viyr-retry hidden>Retry</button>
           </div>
         </div>
@@ -42,17 +42,17 @@
           </button>
           <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
           <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
-          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Image size — pinch or slide
-            <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink image">−</button><input type="range" aria-label="Image size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge image">+</button></div>
+          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Preview size — pinch or slide
+            <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Preview size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
           </div>
 
           <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
           <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
           <div class="viyr-qr" id="viyr-qr-{{ product.id }}" data-viyr-qr-wrap hidden>
-            <p class="viyr-qr__label">Scan with your phone for AR</p>
+            <p class="viyr-qr__label">Scan with your phone to view the product in your room</p>
             <div data-viyr-qr-canvas class="viyr-qr__canvas"></div>
             <p class="viyr-qr__fallback" data-viyr-qr-fallback hidden>
-              QR code unavailable — open this page on your phone instead.
+              QR unavailable — open this page on your phone.
             </p>
           </div>
         </div>
@@ -97,32 +97,35 @@
           </fieldset>
         </div>
         <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
-        <p class="viyr-fit__note">Remaining width assumes centered placement. Floor clearance is space <strong>in front</strong>. Allow room for doors and walking. Custom sizes are not confirmed variants. Photo is not to scale.</p>
+        <p class="viyr-fit__note">Width assumes centered placement. Floor clearance is <strong>in front</strong>. Allow doors. Custom isn't a variant. Photo not to scale.</p>
       </section>
     </div>
   </div>
 
-  <div class="viyr-camera-stage" data-viyr-camera-stage hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Camera image preview">
+  <div class="viyr-camera-stage" data-viyr-camera-stage hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Camera photo preview">
     <video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
     <img class="viyr-product-image" data-viyr-camera-image alt="{{ product.title | escape }} — 2D overlay" draggable="false">
     <button type="button" class="viyr-camera-stage__back" data-viyr-stop-camera>← Back to preview</button>
     <div class="viyr-camera-stage__controls">
       <p data-viyr-camera-note role="status" aria-live="polite"></p>
       <button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
-      <div class="viyr-image-size" data-viyr-image-size-wrap>Visual image size
-        <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink image">−</button><input type="range" aria-label="Visual image size" data-viyr-image-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge image">+</button></div>
+      <div class="viyr-image-size" data-viyr-image-size-wrap>Visual preview size
+        <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Visual preview size" data-viyr-image-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
       </div>
     </div>
   </div>
 </div>
 
 <style>
-  .viyr-root { all: initial; display: block; font-family: system-ui, Arial, sans-serif; }
-  .viyr-root *, .viyr-root *::before, .viyr-root *::after { box-sizing: border-box; }
+  .viyr-root{all:initial;display:block;font-family:system-ui,Arial,sans-serif}
+  .viyr-root *,.viyr-root *::before,.viyr-root *::after{box-sizing:border-box}
 
-  .viyr-button{display:inline-flex;align-items:center;gap:8px;margin:12px 0;padding:12px 20px;background:#111827;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:600;line-height:1;cursor:pointer}
-  .viyr-button:hover{background:#1f2937}
-  .viyr-button:active{transform:scale(.98)}
+  .viyr-button{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;width:min(100%,430px);min-height:58px;margin:12px 0;padding:12px 18px;border:1px solid #2d6067;border-radius:14px;background:linear-gradient(120deg,#21555d,#143943);color:#fff;font:650 15px/1.35 system-ui;text-align:left;box-shadow:0 8px 22px #123b4750;cursor:pointer;transition:transform .18s}
+  .viyr-button span{white-space:pre-line}
+  .viyr-button::after{content:"↗";flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#ffffff26;font-size:21px}
+  .viyr-button:hover{background:#21555d;box-shadow:0 12px 28px #123b4755;transform:translateY(-2px)}
+  .viyr-button:focus-visible{outline:3px solid #64cbbd;outline-offset:3px}
+  .viyr-button:active{transform:translateY(0)}
   .viyr-button[hidden]{display:none}
 
   .viyr-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center}
@@ -348,7 +351,7 @@
     els.cameraNote.textContent = "Starting camera…";
     els.cameraRetry.hidden = true;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      els.cameraNote.textContent = "Camera unavailable here. Use a phone browser over HTTPS.";
+      els.cameraNote.textContent = "Camera unavailable. Use a phone over HTTPS.";
       return;
     }
     try {
@@ -364,7 +367,7 @@
       els.cameraVideo.hidden = false;
       await els.cameraVideo.play();
       if (request === cameraRequest) {
-        els.cameraNote.textContent = "2D visual overlay only. Drag or resize the image; placement is not measured.";
+        els.cameraNote.textContent = "2D photo overlay; drag or resize. Placement is not measured.";
       }
     } catch (error) {
       if (request !== cameraRequest) return;
@@ -375,7 +378,7 @@
       els.cameraRetry.hidden = false;
       els.cameraNote.textContent = error && error.name === "NotAllowedError"
         ? "Camera permission was denied. Allow camera access in your browser."
-        : "Camera could not start on this device.";
+        : "Camera could not start.";
     }
   }
   function positionProductImage() {
@@ -390,21 +393,20 @@
     els.loading.hidden = true;
     els.error.hidden = !imageFailed;
     els.retry.hidden = true;
-    if (imageFailed) els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
+    if (imageFailed) els.errorMessage.textContent = "Product photo unavailable. Check its Shopify media.";
     if (modelViewerEl) modelViewerEl.hidden = true;
     els.productImage.hidden = imageFailed;
     if (els.productImage.src !== productImageUrls[0]) els.productImage.src = productImageUrls[0];
     els.hint.hidden = false;
-    els.hint.textContent = "Product photo • pinch or drag to adjust; not to scale.";
+    els.hint.textContent = "Product photo • pinch or drag; not to scale.";
     els.arBtn.hidden = true;
     showArNote("");
     els.cameraButton.hidden = imageFailed || !isMobileDevice();
     els.previewSizeWrap.hidden = false;
   }
   function updateButtonLabel() {
-    els.buttonLabel.textContent = useProductImage()
-      ? "View Product Image & Check Size"
-      : modelData ? "View in Your Room & Check Size" : "Check Size & Room Fit";
+    els.buttonLabel.textContent = useProductImage() || modelData
+      ? "View Product in Your Room\n& Measure Your Size" : "Measure Your Size & Check Room Fit";
   }
   const productFields = ["product-width", "product-depth", "product-height"];
 
@@ -460,7 +462,7 @@
     if (!chosen || !chosen.every((v) => v !== null && Number.isFinite(v) && v > 0)) {
       fitLine(els.sizeChoice.value === "custom"
         ? "Enter the product's width, depth and height in cm."
-        : "This size needs W, L/D and H in cm in its Shopify size label. No measurements were guessed.", true);
+        : "Add W, L/D and H in cm to this Shopify size label. No dimensions guessed.", true);
       return;
     }
     const [width, depth, height] = chosen;
@@ -501,10 +503,10 @@
     els.sizeSource.textContent = choice === "custom"
       ? "Enter product measurements in cm. Custom size is for planning only."
       : choice === "model"
-      ? "3D reference measurements may differ from your selected Shopify variant."
+      ? "3D reference may differ from the selected variant."
       : shopifySizeDimensions(choice.slice(8))
-      ? "Product measurements from the Shopify size label (cm). Photo is not to scale."
-      : "Add W, L/D and H in cm to this Shopify size label to calculate room fit.";
+      ? "Shopify size label provides cm measurements; photo not to scale."
+      : "Add W, L/D and H in cm to this size label for room fit.";
     renderFit();
   }
   function addReferenceSize() {
@@ -746,11 +748,10 @@
   function renderDesktopQr() {
     const request = ++qrRequest;
     const qrTarget = productPageUrl();
-    const imageHandoff = new URL(qrTarget).searchParams.has("view_product_image");
     const qrLabel = els.qrWrap.querySelector(".viyr-qr__label");
-    if (qrLabel) qrLabel.textContent = imageHandoff
-      ? "Scan with your phone to view the product image"
-      : modelData ? "Scan with your phone for AR" : "Scan with your phone to enter room dimensions";
+    if (qrLabel) qrLabel.textContent = useProductImage() || modelData
+      ? "Scan with your phone to view the product in your room"
+      : "Scan with your phone to check room fit";
     els.qrWrap.hidden = false;
     els.qrCanvas.replaceChildren();
     els.qrFallback.hidden = true;
@@ -786,7 +787,7 @@
     els.modelNotice.hidden = !notice || useProductImage();
     els.sizeNote.hidden = !modelData || useProductImage();
     els.sizeNote.textContent = modelData
-      ? "This 3D model represents only the previewed size" + (selectedVariantId() ? ", not necessarily your selected variant" : "") + ". Other sizes are not verified or automatically scaled."
+      ? "3D preview shows one reference size" + (selectedVariantId() ? ", not your selected variant" : "") + ". Other sizes are not verified or resized."
       : "";
   }
 
@@ -834,7 +835,7 @@
         ? "Checking whether this product's 3D model is ready…"
         : availabilityFailed
         ? "We can't check this product's 3D model right now. Retry the availability check."
-        : "No published 3D model for this product yet. You can still enter its real dimensions and check how it fits.";
+        : "No 3D model yet. Enter dimensions to check room fit.";
       els.qrBtn.hidden = isMobileDevice();
       return;
     }
@@ -964,7 +965,7 @@
     els.cameraButton.hidden = true;
     els.error.hidden = false;
     els.retry.hidden = true;
-    els.errorMessage.textContent = "This product image could not load. Please check its Shopify product media.";
+    els.errorMessage.textContent = "Product photo unavailable. Check its Shopify media.";
   });
   els.cameraButton.addEventListener("click", startCamera);
   els.cameraRetry.addEventListener("click", startCamera);
