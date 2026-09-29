@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 import { Router, type IRouter } from "express";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { bundledPreparedModelPath } from "../lib/prepared-models";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
@@ -11,6 +12,15 @@ router.get("/storage/public-objects/*filePath", async (req, res): Promise<void> 
   const filePath = Array.isArray(raw) ? raw.join("/") : raw;
   if (!filePath || filePath.includes("..") || filePath.startsWith("/")) {
     res.status(400).json({ error: "Invalid public object path" });
+    return;
+  }
+  if (process.env.SERVE_FRONTEND === "1") {
+    const bundled = bundledPreparedModelPath(filePath);
+    if (!bundled) {
+      res.status(404).json({ error: `Public object not found: ${filePath}` });
+      return;
+    }
+    res.type("model/gltf-binary").sendFile(bundled);
     return;
   }
   try {

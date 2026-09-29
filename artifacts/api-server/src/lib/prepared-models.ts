@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ObjectStorageService } from "./objectStorage";
@@ -10,6 +10,11 @@ const preparedPaths: Record<string, string> = {
   [PREPARED_MATTRESS_HANDLE]: "product-models/infini-medical-mattress-200x210x20-v1.glb",
   [PREPARED_WARDROBE_HANDLE]: "product-models/infini-white-wardrobe-80x40x185-v1.glb",
 };
+
+export function bundledPreparedModelPath(objectPath: string): string | null {
+  if (!Object.values(preparedPaths).includes(objectPath)) return null;
+  return path.join(path.dirname(registryPath), objectPath);
+}
 export interface PreparedModel {
   handle: string;
   objectPath: string;
@@ -50,6 +55,16 @@ export async function getPreparedModel(handle: string): Promise<PreparedModel | 
 }
 
 export async function verifyPreparedModel(entry: PreparedModel): Promise<boolean> {
+  if (process.env.SERVE_FRONTEND === "1") {
+    const filePath = bundledPreparedModelPath(entry.objectPath);
+    if (!filePath) return false;
+    try {
+      return (await stat(filePath)).size === entry.fileSizeBytes;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") return false;
+      throw err;
+    }
+  }
   return !!(await storage.searchPublicObject(entry.objectPath));
 }
 

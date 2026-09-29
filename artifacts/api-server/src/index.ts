@@ -16,7 +16,11 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-seedIfEmpty()
+// The Railway database receives a copy of production data; never seed it
+// with Replit's sample catalog while that import is in progress.
+const prepare = process.env.SERVE_FRONTEND === "1" ? Promise.resolve() : seedIfEmpty();
+
+prepare
   .catch((err) => {
     logger.error({ err }, "Failed to seed sample data");
   })

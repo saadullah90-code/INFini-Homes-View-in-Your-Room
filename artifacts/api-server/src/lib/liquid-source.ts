@@ -39,5 +39,14 @@ export async function getLiquidSource(): Promise<LiquidSourceResult> {
     throw new Error("Could not find VIEW_IN_YOUR_ROOM_API in the Custom Liquid source file.");
   }
 
+  if (process.env.SERVE_FRONTEND === "1") {
+    const publicUrl = process.env.PUBLIC_APP_URL;
+    if (!publicUrl) throw new Error("PUBLIC_APP_URL must be set for Railway Custom Liquid.");
+    const url = new URL(publicUrl);
+    if (url.protocol !== "https:") throw new Error("PUBLIC_APP_URL must use HTTPS.");
+    code = code.replace(BACKEND_URL_PATTERN, `VIEW_IN_YOUR_ROOM_API = "${url.origin}"`);
+    return { code, backendUrl: url.origin };
+  }
+
   return { code, backendUrl: match[1] };
 }
