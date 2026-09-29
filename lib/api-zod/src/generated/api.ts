@@ -514,6 +514,7 @@ export const GetStorefrontModelResponse = zod.object({
   "fetched": zod.boolean(),
   "eligible": zod.boolean(),
   "available": zod.boolean(),
+  "inactive": zod.boolean(),
   "imageUrl": zod.string().optional(),
   "productHandle": zod.string().optional(),
   "title": zod.string().optional(),
@@ -527,7 +528,7 @@ export const GetStorefrontModelResponse = zod.object({
   "unit": zod.enum(['mm', 'cm', 'm', 'inch', 'ft'])
 }).describe('Real-world dimensions used for AR scale. Absent until an admin calibrates them.'),zod.null()]).optional(),
   "modelNotice": zod.string().optional()
-}).describe('Public fetched-product status, eligibility and already-published model data. Unknown/sample products have fetched:false. Fetched but ineligible products have fetched:true, eligible:false and available:false.\n')
+}).describe('Public fetched-product status, eligibility and already-published model data. Unknown/sample products have fetched:false. Fetched but ineligible products have fetched:true, eligible:false and available:false. When storefront access is inactive, known products return inactive:true but fetched:false for compatibility with older Custom Liquid snippets; no model URLs are exposed until access is renewed.\n')
 
 
 /**

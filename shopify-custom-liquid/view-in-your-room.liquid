@@ -99,6 +99,7 @@
         <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
         <p class="viyr-fit__note">Width assumes centered placement. Floor clearance is <strong>in front</strong>. Allow doors. Custom isn't a variant. Photo not to scale.</p>
       </section>
+      <p class="viyr-inactive" data-viyr-inactive hidden role="status">This app is closed. Please contact headquarters for payment.</p>
     </div>
   </div>
 
@@ -125,15 +126,14 @@
   .viyr-button::after{content:"↗";flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#ffffff26;font-size:21px}
   .viyr-button:hover{background:#21555d;box-shadow:0 12px 28px #123b4755;transform:translateY(-2px)}
   .viyr-button:focus-visible{outline:3px solid #64cbbd;outline-offset:3px}
-  .viyr-button:active{transform:translateY(0)}
   .viyr-button[hidden]{display:none}
 
   .viyr-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center}
   .viyr-modal[hidden]{display:none}
   .viyr-modal__backdrop{position:absolute;inset:0;background:rgba(17,24,39,.6)}
-  .viyr-modal__panel{position:relative;z-index:1;width:min(920px,94vw);max-height:90vh;overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column}
+  .viyr-modal__panel{position:relative;z-index:1;width:min(920px,94vw);height:min(720px,90vh);overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column}
   .viyr-modal__close{position:absolute;top:10px;right:12px;z-index:2;width:36px;height:36px;border-radius:999px;border:none;background:rgba(255,255,255,.9);color:#111827;font-size:22px;line-height:1;cursor:pointer}
-  .viyr-modal__body{display:flex;flex-direction:column;height:100%}
+  .viyr-modal__body{display:flex;flex:1;min-height:0;flex-direction:column}
   .viyr-modal__body[hidden]{display:none}
   @media (min-width: 720px) {
     .viyr-modal__body{flex-direction:row}
@@ -165,7 +165,7 @@
   .viyr-spinner{width:32px;height:32px;border-radius:999px;border:3px solid #e5e7eb;border-top-color:#111827;animation:viyr-spin .8s linear infinite}
   @keyframes viyr-spin{to{transform:rotate(360deg)}}
 
-  .viyr-side{flex:1 1 40%;padding:20px 24px 24px;overflow-y:auto;display:flex;flex-direction:column}
+  .viyr-side{flex:1 1 40%;min-height:0;padding:20px 24px 24px;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
   .viyr-side__title{margin:0 0 4px;font-size:18px;font-weight:700;color:#111827}
   .viyr-side__hint{margin:0 0 16px;font-size:13px;color:#6b7280}
   .viyr-side__dimensions{margin:0 0 6px;font-size:14px;font-weight:600;color:#111827}
@@ -189,8 +189,10 @@
   .viyr-qr__fallback{font-size:12px;color:#6b7280}
   .viyr-qr__fallback[hidden]{display:none}
 
-  .viyr-fit{overflow-y:auto;padding:22px;color:#172333}
+  .viyr-fit{flex:1;min-height:0;overflow-y:auto;padding:22px;color:#172333}
   .viyr-fit[hidden]{display:none}
+  .viyr-inactive{margin:auto;padding:40px 28px;max-width:540px;text-align:center;font:600 20px/1.5 system-ui;color:#172333}
+  .viyr-inactive[hidden]{display:none}
   .viyr-fit h3{margin:14px 0 6px;font-size:20px}
   .viyr-fit p{margin:0 0 14px;font-size:13px;line-height:1.45}
   .viyr-fit label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
@@ -210,9 +212,9 @@
 
   @media (max-width: 719px) {
     .viyr-modal__panel{width:100vw;height:100vh;max-height:100vh;border-radius:0}
-    .viyr-modal__body{min-height:0}
-    .viyr-viewer-wrap{flex:1 1 auto;min-height:240px}
-    .viyr-side{order:-1;flex:0 0 auto;padding:16px 20px 10px}
+    .viyr-modal__body{overflow-y:auto;overscroll-behavior:contain}
+    .viyr-viewer-wrap{flex:none;height:min(55vh,420px);min-height:240px}
+    .viyr-side{order:-1;flex:none;overflow:visible;padding:16px 20px 10px}
     .viyr-ar-btn{width:100%;padding:15px 16px;font-size:16px}
     .viyr-fit{padding:18px}
     .viyr-fit__spaces{grid-template-columns:1fr}
@@ -294,6 +296,7 @@
     qrFallback: root.querySelector("[data-viyr-qr-fallback]"),
     body: root.querySelector(".viyr-modal__body"),
     fit: root.querySelector("[data-viyr-fit]"),
+    inactive: root.querySelector("[data-viyr-inactive]"),
     fitOpen: root.querySelector("[data-viyr-size-open]"),
     fitBack: root.querySelector("[data-viyr-size-back]"),
     sizeChoice: root.querySelector("[data-viyr-size-choice]"),
@@ -304,6 +307,7 @@
 
   let modelData = null;
   let fetched = false;
+  let inactive = false;
   let availabilityChecking = true;
   let availabilityFailed = false;
   let modelViewerLoadPromise = null;
@@ -405,7 +409,7 @@
     els.previewSizeWrap.hidden = false;
   }
   function updateButtonLabel() {
-    els.buttonLabel.textContent = useProductImage() || modelData
+    els.buttonLabel.textContent = inactive ? "View Product in Your Room" : useProductImage() || modelData
       ? "View Product in Your Room\n& Measure Your Size" : "Measure Your Size & Check Room Fit";
   }
   const productFields = ["product-width", "product-depth", "product-height"];
@@ -590,10 +594,18 @@
       availabilityFailed = false;
       if (!productImageUrls[0] && typeof data.imageUrl === "string"
         && data.imageUrl.startsWith("https://cdn.shopify.com/")) productImageUrls = [data.imageUrl];
+      inactive = data.inactive === true;
       fetched = data.fetched === true || (data.fetched === undefined && data.eligible === true);
-      els.button.hidden = !fetched;
-      if (!fetched) {
+      els.button.hidden = !fetched && !inactive;
+      if (!fetched && !inactive) {
         availabilityChecking = false;
+        return;
+      }
+      if (inactive) {
+        modelData = null;
+        updateButtonLabel();
+        availabilityChecking = false;
+        if (!els.modal.hidden) openModal();
         return;
       }
       if (data.available && data.modelUrl) {
@@ -796,6 +808,16 @@
   }
 
   async function openModal() {
+    if (inactive) {
+      els.modal.hidden = false;
+      els.modal.setAttribute("aria-hidden", "false");
+      els.body.hidden = true;
+      els.fit.hidden = true;
+      els.inactive.hidden = false;
+      document.body.style.overflow = "hidden";
+      return;
+    }
+    els.inactive.hidden = true;
     if (viewerState === "error" && modelViewerEl) {
       modelViewerEl.remove();
       modelViewerEl = null;
@@ -885,6 +907,7 @@
     stopCamera();
     resetQr();
     els.fit.hidden = true;
+    els.inactive.hidden = true;
     els.body.hidden = false;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");

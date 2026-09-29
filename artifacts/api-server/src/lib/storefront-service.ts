@@ -83,6 +83,7 @@ export interface StorefrontModelResult {
   fetched: boolean;
   eligible: boolean;
   available: boolean;
+  inactive: boolean;
   imageUrl?: string;
   productHandle?: string;
   title?: string;
@@ -104,21 +105,22 @@ export async function getStorefrontModel(
   handle: string,
   appBaseUrl: string,
 ): Promise<StorefrontModelResult> {
-  if (!(await isStorefrontActive())) {
-    return { fetched: false, eligible: false, available: false };
-  }
+  const active = await isStorefrontActive();
   const [product] = await db
     .select()
     .from(productsTable)
     .where(and(eq(productsTable.handle, handle), ne(productsTable.source, "sample")));
 
   if (!product) {
-    return { fetched: false, eligible: false, available: false };
+    return { fetched: false, eligible: false, available: false, inactive: false };
+  }
+  if (!active) {
+    return { fetched: false, eligible: false, available: false, inactive: true };
   }
   const imageUrl = product.primaryImageUrl && isValidShopifyCdnImageUrl(product.primaryImageUrl)
     ? product.primaryImageUrl : undefined;
   if (!product.eligible) {
-    return { fetched: true, eligible: false, available: false, imageUrl };
+    return { fetched: true, eligible: false, available: false, inactive: false, imageUrl };
   }
 
   const [model] = await db
@@ -128,7 +130,7 @@ export async function getStorefrontModel(
 
   if (!model || model.status !== "PUBLISHED" || !model.optimizedModelUrl || !model.arToken ||
       (product.source !== "sample" && model.provider === "mock")) {
-    return { fetched: true, eligible: true, available: false, imageUrl };
+    return { fetched: true, eligible: true, available: false, inactive: false, imageUrl };
   }
 
   const prepared = model.provider === "prepared" ? await getPreparedModel(product.handle) : null;
@@ -139,6 +141,7 @@ export async function getStorefrontModel(
     fetched: true,
     eligible: true,
     available: true,
+    inactive: false,
     imageUrl,
     productHandle: product.handle,
     title: product.title,

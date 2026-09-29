@@ -8,12 +8,13 @@
 import type { ProductDimensions } from './productDimensions';
 
 /**
- * Public fetched-product status, eligibility and already-published model data. Unknown/sample products have fetched:false. Fetched but ineligible products have fetched:true, eligible:false and available:false.
+ * Public fetched-product status, eligibility and already-published model data. Unknown/sample products have fetched:false. Fetched but ineligible products have fetched:true, eligible:false and available:false. When storefront access is inactive, known products return inactive:true but fetched:false for compatibility with older Custom Liquid snippets; no model URLs are exposed until access is renewed.
  */
 export interface StorefrontModel {
   fetched: boolean;
   eligible: boolean;
   available: boolean;
+  inactive: boolean;
   imageUrl?: string;
   productHandle?: string;
   title?: string;

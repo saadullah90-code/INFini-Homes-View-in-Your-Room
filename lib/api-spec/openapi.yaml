@@ -847,10 +847,14 @@ components:
         Public fetched-product status, eligibility and already-published model
         data. Unknown/sample products have fetched:false. Fetched but ineligible
         products have fetched:true, eligible:false and available:false.
+        When storefront access is inactive, known products return inactive:true
+        but fetched:false for compatibility with older Custom Liquid snippets;
+        no model URLs are exposed until access is renewed.
       properties:
         fetched: { type: boolean }
         eligible: { type: boolean }
         available: { type: boolean }
+        inactive: { type: boolean }
         imageUrl: { type: string }
         productHandle: { type: string }
         title: { type: string }
@@ -866,6 +870,7 @@ components:
         - fetched
         - eligible
         - available
+        - inactive
 
     StorefrontConnectRequest:
       type: object
