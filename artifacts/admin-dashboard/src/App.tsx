@@ -179,7 +179,7 @@ function LiquidSourceSection() {
             <strong style={{ display: 'block', fontSize: 13, color: '#304a50', marginBottom: 10 }}>Status</strong>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Pair label="Frontend code" value={<Badge value="live" label="Ready" />} />
-              <Pair label="Backend" value="Replit Development" />
+              <Pair label="Backend" value={import.meta.env.DEV ? "Replit Development" : "Railway"} />
               <Pair label="Current backend URL" value={<span style={{ fontFamily: 'var(--app-font-mono, monospace)', fontSize: 11, wordBreak: 'break-all' }}>{q.data?.backendUrl}</span>} />
               <Pair label="Meshy" value={<Badge value={meshyLive ? 'live' : 'mock'} label={meshyLive ? 'Live generation enabled' : 'Mock / Live generation disabled'} />} />
             </div>
@@ -269,7 +269,7 @@ function ArPreview() {
 }
 // Public demo is deliberately separate from all products and publish state.
 // Verified public deployment; never encode the authenticated workspace preview.
-const PUBLIC_DEMO_URL = "https://in-fini-homes-view-in-your-room.replit.app/demo-ar";
+const PUBLIC_DEMO_URL = "https://workspaceapi-server-production-8185.up.railway.app/demo-ar";
 function FreeArDemo() {
   const qrRoot = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
@@ -315,7 +315,7 @@ function FreeArDemo() {
             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='none' stroke='white' stroke-width='2' d='M16 3 3 10v13l13 7 13-7V10ZM3 10l13 7 13-7M16 17v13M16 3v14'/%3E%3C/svg%3E" alt="" style={{width:32,height:32,objectFit:'contain'}} />
             Apne room mein dekhein — Open AR
           </a>
-        : <a className="btn btn-primary" data-testid="launch-android-ar" href="intent://arvr.google.com/scene-viewer/1.0?file=https%3A%2F%2Fmodelviewer.dev%2Fshared-assets%2Fmodels%2FAstronaut.glb&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;S.browser_fallback_url=https%3A%2F%2Fin-fini-homes-view-in-your-room.replit.app%2Fdemo-ar%3Far_unavailable%3D1;end;">Apne room mein dekhein — Open AR</a>}
+        : <a className="btn btn-primary" data-testid="launch-android-ar" href={`intent://arvr.google.com/scene-viewer/1.0?file=https%3A%2F%2Fmodelviewer.dev%2Fshared-assets%2Fmodels%2FAstronaut.glb&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;S.browser_fallback_url=${encodeURIComponent(`${PUBLIC_DEMO_URL}?ar_unavailable=1`)};end;`}>Apne room mein dekhein — Open AR</a>}
       <p className="small">If AR does not open inside a QR scanner or another app, open this page in Safari (iPhone) or Chrome (Android). AR requires a supported device; camera cannot start automatically from a QR scan.</p>
       {new URLSearchParams(window.location.search).has('ar_unavailable') && <p role="alert">AR could not launch on this device. Check Google Play Services for AR support; the 3D preview remains available below.</p>}
     </div>}
@@ -327,7 +327,7 @@ function FreeArDemo() {
       <div ref={qrRoot} style={{padding:12,background:'white'}} aria-label="QR code for this demo"/>
       {error && <p role="alert">{error}</p>}
       <a href={link} target="_blank" rel="noreferrer">{link}</a>
-      <p>This QR opens the public published demo. No Replit account is required.</p>
+      <p>This QR opens the public Railway demo. No account is required.</p>
     </div>}
     {isMobile && <p style={{marginTop:16}}>The preview below the AR button is optional. iPhone uses a prepared USDZ sample, not an on-device conversion. Physical phone camera testing is still required.</p>}
     <p className="small" style={{marginTop:22}}>Sample model from <a href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a>. This demo cannot publish a product model.</p>
