@@ -1,120 +1,81 @@
-<div
-  class="viyr-root"
-  id="viyr-root-{{ product.id }}"
-  data-viyr-instance
-  data-product-handle="{{ product.handle }}"
-  data-product-title="{{ product.title | escape }}"
-  data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
-  {% if product.featured_image %}data-featured-image="{{ product.featured_image | image_url: width: 1200 | escape }}"{% endif %}
-  data-shop-storefront-domain="{{ request.host }}"
->
-  <button type="button" class="viyr-button" data-viyr-open hidden>
-    <span data-viyr-button-label>View Product in Your Room<br>&amp; Measure Your Size</span>
-  </button>
-
-  <div class="viyr-modal" data-viyr-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="View in Your Room">
-    <div class="viyr-modal__backdrop" data-viyr-close></div>
-    <div class="viyr-modal__panel">
-      <button type="button" class="viyr-modal__close" data-viyr-close aria-label="Close">&times;</button>
-
-      <div class="viyr-modal__body">
-        <div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
-          <img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product photo" draggable="false">
-          <div class="viyr-state" data-viyr-loading>
-            <div class="viyr-spinner" aria-hidden="true"></div>
-            <p>Loading 3D model…</p>
-          </div>
-          <div class="viyr-state" data-viyr-error hidden>
-            <p data-viyr-error-message>3D model unavailable. Please try again.</p>
-            <button type="button" class="viyr-retry-btn" data-viyr-retry hidden>Retry</button>
-          </div>
-        </div>
-
-        <div class="viyr-side">
-          <h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
-          <p class="viyr-side__hint" data-viyr-hint>Pinch: zoom; slider: size</p>
-          <p class="viyr-side__dimensions" data-viyr-dimensions hidden></p>
-          <p class="viyr-side__notice" data-viyr-model-notice hidden></p>
-          <p class="viyr-side__notice" data-viyr-size-note hidden></p>
-
-          <button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden disabled>
-            View in your space (AR)
-          </button>
-          <p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
-          <button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
-          <div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Preview size
-            <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Preview size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
-          </div>
-
-          <button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
-          <button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
-          <div class="viyr-qr" id="viyr-qr-{{ product.id }}" data-viyr-qr-wrap hidden>
-            <p class="viyr-qr__label">Scan with your phone to view the product in your room</p>
-            <div data-viyr-qr-canvas class="viyr-qr__canvas"></div>
-            <p class="viyr-qr__fallback" data-viyr-qr-fallback hidden>
-              QR unavailable — open this page on your phone.
-            </p>
-          </div>
-        </div>
-      </div>
+<div class="viyr-root" id="viyr-root-{{ product.id }}" data-viyr-instance
+data-product-handle="{{ product.handle }}" data-product-title="{{ product.title | escape }}"
+data-product-image-urls="{{ product.images | map: 'src' | json | escape }}"
+{% if product.featured_image %}data-featured-image="{{ product.featured_image | image_url: width: 1200 | escape }}"{% endif %}
+data-shop-storefront-domain="{{ request.host }}">
+<button type="button" class="viyr-button" data-viyr-open hidden>
+<span data-viyr-button-label>View Product in Your Room<br>&amp; Measure Your Size</span></button>
+<div class="viyr-modal" data-viyr-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="View in Your Room">
+<div class="viyr-modal__backdrop" data-viyr-close></div>
+<div class="viyr-modal__panel">
+<button type="button" class="viyr-modal__close" data-viyr-close aria-label="Close">&times;</button>
+<div class="viyr-modal__body">
+<div class="viyr-viewer-wrap" data-viyr-viewer-wrap>
+<img class="viyr-product-image" data-viyr-product-image hidden alt="{{ product.title | escape }} — product photo" draggable="false">
+<div class="viyr-state" data-viyr-loading><div class="viyr-spinner" aria-hidden="true"></div><p>Loading 3D model…</p></div>
+<div class="viyr-state" data-viyr-error hidden>
+<p data-viyr-error-message>3D model unavailable. Please try again.</p>
+<button type="button" class="viyr-retry-btn" data-viyr-retry hidden>Retry</button></div></div>
+<div class="viyr-side">
+<h3 class="viyr-side__title" data-viyr-title>&nbsp;</h3>
+<p class="viyr-side__hint" data-viyr-hint>Pinch: zoom; slider: size</p>
+<p class="viyr-side__dimensions" data-viyr-dimensions hidden></p>
+<p class="viyr-side__notice" data-viyr-model-notice hidden></p>
+<p class="viyr-side__notice" data-viyr-size-note hidden></p>
+<button type="button" class="viyr-ar-btn" data-viyr-ar-btn hidden disabled>View in your space (AR)</button>
+<p class="viyr-ar-note" data-viyr-ar-note hidden role="status" aria-live="polite"></p>
+<button type="button" class="viyr-qr-btn" data-viyr-start-camera hidden>View in your space (2D photo)</button>
+<div class="viyr-image-size" data-viyr-preview-size-wrap hidden>Preview size
+<div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Preview size" data-viyr-preview-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div></div>
+<button type="button" class="viyr-qr-btn" data-viyr-size-open>Enter your dimensions</button>
+<button type="button" class="viyr-qr-btn" data-viyr-qr-btn hidden aria-expanded="false" aria-controls="viyr-qr-{{ product.id }}">Show QR code</button>
+<div class="viyr-qr" id="viyr-qr-{{ product.id }}" data-viyr-qr-wrap hidden>
+<p class="viyr-qr__label">Scan with your phone to view the product in your room</p>
+<div data-viyr-qr-canvas class="viyr-qr__canvas"></div>
+<p class="viyr-qr__fallback" data-viyr-qr-fallback hidden>QR unavailable — open this page on your phone.</p>
+</div></div></div>
       <section class="viyr-fit" data-viyr-fit hidden aria-label="Product size and room fit calculator">
-        <button type="button" class="viyr-qr-btn" data-viyr-size-back>← Back to preview and QR</button>
-        <h3>Enter your dimensions</h3>
-        <p>Compare product and room sizes in cm. Photos do not provide measurements.</p>
-        <label for="viyr-size-choice-{{ product.id }}">Product size</label>
-        <select id="viyr-size-choice-{{ product.id }}" data-viyr-size-choice>
-          {% for option in product.options_with_values %}
-            {% assign size_option_name = option.name | downcase %}
-            {% if size_option_name contains 'size' or size_option_name contains 'dimension' %}
-              {% for value in option.values %}
-                <option value="shopify:{{ value | escape }}" {% if value == option.selected_value %}selected{% endif %}>Shopify size: {{ value | escape }}</option>
-              {% endfor %}
-            {% endif %}
-          {% endfor %}
-          <option value="custom">Custom size (planning only)</option>
-        </select>
-        <p class="viyr-fit__note" data-viyr-size-source></p>
-        <div class="viyr-fit__fields" data-viyr-product-fields hidden>
-          <label>Product width <input data-viyr-product-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-          <label>Product depth <input data-viyr-product-depth type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-          <label>Product height <input data-viyr-product-height type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-        </div>
-        <div class="viyr-fit__spaces">
-          <fieldset>
-            <legend>Your wall (optional)</legend>
-            <div class="viyr-fit__fields">
-              <label>Wall width <input data-viyr-wall-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-              <label>Wall height <input data-viyr-wall-height type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>Your floor / room (optional)</legend>
-            <div class="viyr-fit__fields">
-              <label>Floor width <input data-viyr-floor-width type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-              <label>Floor depth <input data-viyr-floor-depth type="number" inputmode="decimal" min="0.1" max="100000" step="0.1" placeholder="cm"></label>
-              <label>Gap behind product <input data-viyr-back-gap type="number" inputmode="decimal" min="0" max="100000" step="0.1" value="0"></label>
-            </div>
-          </fieldset>
-        </div>
-        <div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
-        <p class="viyr-fit__note">Width assumes centered placement. Floor clearance is <strong>in front</strong>. Allow doors. Custom isn't a variant. Photo not to scale.</p>
+<button type="button" class="viyr-qr-btn" data-viyr-size-back>← Back to preview and QR</button>
+<h3>Enter your dimensions</h3><p>Compare product and room sizes in cm. Photos do not provide measurements.</p>
+<label for="viyr-size-choice-{{ product.id }}">Product size</label>
+<select id="viyr-size-choice-{{ product.id }}" data-viyr-size-choice>
+{% for option in product.options_with_values %}
+{% assign size_option_name = option.name | downcase %}
+{% if size_option_name contains 'size' or size_option_name contains 'dimension' %}
+{% for value in option.values %}
+<option value="shopify:{{ value | escape }}" {% if value == option.selected_value %}selected{% endif %}>Shopify size: {{ value | escape }}</option>
+{% endfor %}{% endif %}{% endfor %}
+<option value="custom">Custom size (planning only)</option></select>
+<p class="viyr-fit__note" data-viyr-size-source></p>
+<div class="viyr-fit__fields" data-viyr-product-fields hidden>
+<label>Product width <input data-viyr-product-width type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label>
+<label>Product depth <input data-viyr-product-depth type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label>
+<label>Product height <input data-viyr-product-height type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label></div>
+<div class="viyr-fit__spaces">
+<fieldset><legend>Your wall (optional)</legend><div class="viyr-fit__fields">
+<label>Wall width <input data-viyr-wall-width type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label>
+<label>Wall height <input data-viyr-wall-height type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label></div></fieldset>
+<fieldset><legend>Your floor / room (optional)</legend><div class="viyr-fit__fields">
+<label>Floor width <input data-viyr-floor-width type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label>
+<label>Floor depth <input data-viyr-floor-depth type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="cm"></label>
+<label>Gap behind product <input data-viyr-back-gap type="number" inputmode="decimal" min="0" step="0.1" value="0"></label></div></fieldset></div>
+<div class="viyr-fit__result" data-viyr-fit-result role="status" aria-live="polite"></div>
+<p class="viyr-fit__note">Width assumes centered placement. Floor clearance is <strong>in front</strong>. Allow doors. Custom isn't a variant. Photo not to scale.</p>
       </section>
       <p class="viyr-inactive" data-viyr-inactive hidden role="status">This app is closed. Please contact headquarters for payment.</p>
     </div>
   </div>
 
-  <div class="viyr-camera-stage" data-viyr-camera-stage hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Camera photo preview">
-    <video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
-    <img class="viyr-product-image" data-viyr-camera-image alt="{{ product.title | escape }} — 2D overlay" draggable="false">
-    <button type="button" class="viyr-camera-stage__back" data-viyr-stop-camera>← Back to preview</button>
-    <div class="viyr-camera-stage__controls">
-      <p data-viyr-camera-note role="status" aria-live="polite"></p>
-      <button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
-      <div class="viyr-image-size" data-viyr-image-size-wrap>Visual preview size
-        <div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Visual preview size" data-viyr-image-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
-      </div>
-    </div>
-  </div>
+<div class="viyr-camera-stage" data-viyr-camera-stage hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Camera photo preview">
+<video class="viyr-camera-video" data-viyr-camera-video autoplay muted playsinline hidden aria-label="Live room camera"></video>
+<img class="viyr-product-image" data-viyr-camera-image alt="{{ product.title | escape }} — 2D overlay" draggable="false">
+<button type="button" class="viyr-camera-stage__back" data-viyr-stop-camera>← Back to preview</button>
+<div class="viyr-camera-stage__controls">
+<p data-viyr-camera-note role="status" aria-live="polite"></p>
+<button type="button" class="viyr-qr-btn" data-viyr-camera-retry hidden>Try camera again</button>
+<div class="viyr-image-size" data-viyr-image-size-wrap>Visual preview size
+<div class="viyr-size-row"><button type="button" data-viyr-zoom="-20" aria-label="Shrink preview">−</button><input type="range" aria-label="Visual preview size" data-viyr-image-size min="50" max="240" value="100"><button type="button" data-viyr-zoom="20" aria-label="Enlarge preview">+</button></div>
+</div></div></div>
 </div>
 
 <style>
@@ -124,7 +85,6 @@
   .viyr-button{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;width:min(100%,430px);min-height:58px;margin:12px 0;padding:12px 18px;border:1px solid #2d6067;border-radius:14px;background:linear-gradient(120deg,#21555d,#143943);color:#fff;font:650 15px/1.35 system-ui;text-align:left;box-shadow:0 8px 22px #123b4750;cursor:pointer;transition:transform .18s}
   .viyr-button span{white-space:pre-line}
   .viyr-button::after{content:"↗";flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#ffffff26;font-size:21px}
-  .viyr-button:hover{background:#21555d;box-shadow:0 12px 28px #123b4755;transform:translateY(-2px)}
   .viyr-button:focus-visible{outline:3px solid #64cbbd;outline-offset:3px}
   .viyr-button[hidden]{display:none}
 
@@ -176,7 +136,6 @@
   .viyr-qr-btn{align-self:flex-start;margin:8px 0}
 
   .viyr-ar-btn{margin:4px 0 6px;padding:12px 16px;border:none;border-radius:10px;background:#111827;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
-  .viyr-ar-btn:hover{background:#1f2937}
   .viyr-ar-btn:disabled{opacity:.6;cursor:not-allowed}
   .viyr-ar-btn[hidden]{display:none}
   .viyr-ar-note{font-size:12px;color:#6b7280;margin:0 0 12px}
